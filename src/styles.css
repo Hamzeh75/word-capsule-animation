@@ -244,7 +244,7 @@
   .tl-track input:active::-webkit-slider-thumb { transform: scale(1.2); }
   .tl-track input::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid #141414; }
   .tl-time { font-size: 12.5px; color: #55555f; font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; min-width: 74px; text-align: right; }
-  .frame { position: relative; box-shadow: 0 30px 70px -35px rgba(0,0,0,.4); background: #f3f3f3; cursor: pointer; }
+  .frame { position: relative; box-shadow: 0 30px 70px -35px rgba(0,0,0,.4); background: #f3f3f3; cursor: pointer; border-radius: 18px; overflow: hidden; }
   .frame canvas { display: block; width: 100%; height: 100%; }
   .sheet-handle { display: none; }
 
@@ -255,7 +255,6 @@
       position: fixed; top: 0; left: 0; right: 0; z-index: 5; height: auto; justify-content: flex-start;
       padding: calc(5vw + env(safe-area-inset-top)) 0 calc(10px + var(--sheet-r)); background: #ececef; gap: 10px;
     }
-    .frame { border-radius: 18px; overflow: hidden; }
     .panel {
       position: fixed; left: 0; right: 0; bottom: 0; top: var(--sheet-top, 60vh); z-index: 15;
       border-radius: var(--sheet-r) var(--sheet-r) 0 0; box-shadow: 0 -10px 24px -14px rgba(0,0,0,.3);
