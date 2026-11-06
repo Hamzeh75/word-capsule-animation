@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f6f8">
+<title>انیمیشن کلمه و کپسول</title>
+<meta name="description" content="Type a word, add photos, and export a smooth capsule-reveal GIF — Persian, English and Arabic.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+<aside class="panel" id="panel" dir="rtl">
+  <div class="lang" id="lang">
+    <button class="lang-btn" id="langBtn" aria-haspopup="listbox">
+      <span class="flag" id="langFlag">🇮🇷</span><span id="langName">فارسی</span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <div class="lang-menu" role="listbox">
+      <button class="lang-item" data-lang="fa"><span class="flag">🇮🇷</span>فارسی<small>Persian</small></button>
+      <button class="lang-item" data-lang="en"><span class="flag">🇺🇸</span>English<small>English</small></button>
+      <button class="lang-item" data-lang="ar"><span class="flag">🇸🇦</span>العربية<small>Arabic</small></button>
+    </div>
+  </div>
+
+  <div class="brand" data-t="brand"></div>
+  <div class="sub" data-t="sub"></div>
+
+  <div class="field">
+    <div class="label"><span data-t="text"></span> <span class="req">*</span></div>
+    <input class="control" id="text" type="text" value="ایران" maxlength="24" dir="auto">
+    <div class="hint" data-t="textHint"></div>
+  </div>
+
+  <div class="field" id="kashidaField">
+    <div class="label"><span data-t="kashida"></span> <span class="help" data-tip-t="kashidaTip">?</span></div>
+    <select class="control" id="kashida" data-opts="kashidaOpts" data-default="2"></select>
+  </div>
+
+  <div class="field">
+    <div class="label"><span data-t="ratio"></span> <span class="help" data-tip-t="ratioTip">?</span></div>
+    <select class="control" id="ratio" data-opts="ratioOpts" data-default="4:5"></select>
+  </div>
+
+  <div class="field">
+    <div class="label"><span data-t="photos"></span> <span class="help" data-tip-t="photosTip">?</span></div>
+    <label class="upload">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0-4 4m4-4 4 4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+      <span data-t="uploadPhotos"></span>
+      <input type="file" id="imgfile" accept="image/*" multiple>
+    </label>
+    <div class="seg" style="margin-top:10px">
+      <button id="useDefault" class="on" data-t="defaultPhotos"></button>
+      <button id="useMine" disabled data-t="myPhotos"></button>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+
+  <div class="field">
+    <div class="label"><span data-t="font"></span> <span class="help" data-tip-t="fontTip">?</span></div>
+    <label class="upload">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0-4 4m4-4 4 4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+      <span id="fontLabel" data-t="uploadFont"></span>
+      <input type="file" id="fontfile" accept=".ttf,.otf,.woff,.woff2">
+    </label>
+  </div>
+
+  <div class="field">
+    <div class="label"><span data-t="bg"></span> <span class="help" data-tip-t="bgTip">?</span></div>
+    <select class="control" id="bg" data-opts="bgOpts" data-default="grain"></select>
+    <label class="upload bgUpload" id="bgUpload">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0-4 4m4-4 4 4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+      <span id="bgLabel" data-t="uploadBg"></span>
+      <input type="file" id="bgfile" accept="image/*">
+    </label>
+  </div>
+
+  <div class="field">
+    <div class="label"><span data-t="speed"></span> <span class="help" data-tip-t="speedTip">?</span><span class="speed-val" id="speedVal">1×</span></div>
+    <div class="speed-row">
+      <span class="speed-end" data-t="slow"></span>
+      <input type="range" class="speed" id="speed" min="0" max="6" step="1" value="2" dir="ltr">
+      <span class="speed-end" data-t="fast"></span>
+    </div>
+  </div>
+
+  <div class="field">
+    <div class="label"><span data-t="playback"></span> <span class="help" data-tip-t="playbackTip">?</span></div>
+    <div class="seg" role="radiogroup">
+      <button id="loopOn" class="on" role="radio" data-t="loopOn"></button>
+      <button id="loopOff" role="radio" data-t="loopOff"></button>
+    </div>
+    <button class="replay-btn" id="replay">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+      <span data-t="replay"></span>
+    </button>
+  </div>
+
+  <div class="field row">
+    <div>
+      <div class="label"><span data-t="gifSize"></span> <span class="help" data-tip-t="gifSizeTip">?</span></div>
+      <select class="control" id="gifSize" data-opts="sizeOpts" data-default="480"></select>
+    </div>
+    <div>
+      <div class="label"><span data-t="fps"></span> <span class="help" data-tip-t="fpsTip">?</span></div>
+      <select class="control" id="gifFps" data-opts="fpsOpts" data-default="50"></select>
+    </div>
+  </div>
+
+  <div class="field">
+    <div class="label"><span data-t="gifCount"></span> <span class="help" data-tip-t="gifCountTip">?</span></div>
+    <select class="control" id="gifCount" data-opts="countOpts" data-default="3"></select>
+  </div>
+
+  <div class="genbar">
+    <button class="generate" id="generate">
+      <div class="bar" id="bar"></div>
+      <svg class="gico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2.5" y="3.5" width="15" height="13" rx="3"/>
+        <circle cx="7.5" cy="8" r="1.4" fill="#fff" stroke="none"/>
+        <path d="m3.5 14.5 4-4 3 3 2-2 4 4"/>
+        <g class="arrow"><circle cx="18" cy="17" r="4.6" fill="#fff" stroke="none"/><path d="M18 14.6v4.6m-2-2 2 2 2-2" stroke="#141414" stroke-width="1.7"/></g>
+      </svg>
+      <span id="genLabel" data-t="create"></span>
+    </button>
+    <button class="reset" id="reset" data-title-t="reset">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+      <span data-t="reset"></span>
+    </button>
+    <div class="status" id="status"></div>
+  </div>
+  <img class="preview-gif" id="gifPreview" alt="GIF">
+</aside>
+
+<main class="stage" id="stage">
+  <div class="frame" id="frame"><canvas id="view"></canvas></div>
+  <div class="tl" id="tl">
+    <button class="tl-play" id="tlPlay" aria-label="play/pause">
+      <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>
+      <svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.2-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>
+    </button>
+    <div class="tl-track">
+      <div class="tl-marks" id="tlMarks"></div>
+      <input type="range" id="tlRange" min="0" max="1000" step="1" value="0" aria-label="timeline">
+    </div>
+    <div class="tl-time" id="tlTime">0:00 / 0:00</div>
+    <button class="tl-speed" id="tlSpeed" title="speed">1×</button>
+  </div>
+</main>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
