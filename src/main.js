@@ -12,7 +12,16 @@ const L = () => I18N[lang];
 const $ = id => document.getElementById(id);
 const panel = $('panel'), status = $('status');
 let sayTimer = 0;
-const say = msg => { clearTimeout(sayTimer); status.classList.remove('fade'); status.textContent = msg; };
+const say = (msg, err = false) => { clearTimeout(sayTimer); status.classList.remove('fade'); status.classList.toggle('err', err); status.textContent = msg; };
+// red on-screen toast for errors / cancellations; hides itself after a few seconds
+const toastEl = document.createElement('div'); toastEl.className = 'toast'; toastEl.setAttribute('role', 'alert'); document.body.appendChild(toastEl);
+let toastTimer = 0;
+const toast = msg => {
+  clearTimeout(toastTimer); toastEl.textContent = msg; toastEl.dir = document.documentElement.dir;
+  toastEl.classList.add('show'); toastTimer = setTimeout(() => toastEl.classList.remove('show'), 3200);
+};
+toastEl.addEventListener('click', () => { clearTimeout(toastTimer); toastEl.classList.remove('show'); });
+const sayError = msg => { say(msg, true); toast(msg); };
 // brief message that fades away on its own
 const flash = msg => {
   say(msg);
@@ -207,16 +216,36 @@ function draw(ctx, W, H, t, ov) {
 // ================= live preview =================
 const frame = $('frame'), view = $('view'), vctx = view.getContext('2d'), stage = $('stage');
 const ratioWH = () => S.ratio.split(':').map(Number);
+const isMobile = window.matchMedia('(max-width: 860px)');
+// phone only: the settings sheet rests just under the timeline, or is pulled up over the preview
+let sheetUp = false, sheetTop = null;
+const sheetStops = () => {
+  const r = parseFloat(getComputedStyle(document.body).getPropertyValue('--sheet-r')) || 24;
+  const rest = stage.offsetHeight - r;                                   // sheet edge overlaps the bottom of the stage
+  const up = Math.min(rest, Math.max(48, window.innerHeight * .08));     // leaves a sliver of the preview showing
+  return [up, rest];
+};
+const placeSheet = () => {
+  const [up, rest] = sheetStops();
+  const top = sheetTop ?? (sheetUp ? up : rest);
+  panel.style.setProperty('--sheet-top', Math.max(up, Math.min(rest, top)) + 'px');
+};
 function layout() {
   const [a, b] = ratioWH();
   const cs = getComputedStyle(stage), padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight), padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
   const tlH = $('tl').offsetHeight + parseFloat(cs.rowGap || cs.gap || 16);
   const sw = stage.clientWidth - padX, sh = stage.clientHeight - padY - tlH;
-  let w = sw, h = sw * b / a; if (h > sh) { h = sh; w = sh * a / b; }
+  let w = sw, h = sw * b / a;
+  if (isMobile.matches) {
+    // phone: preview and timeline take 90% of the width; very tall ratios (9:16) are capped so the settings stay reachable
+    w = sw * .9; h = w * b / a;
+    const maxH = window.innerHeight * .58; if (h > maxH) { h = maxH; w = h * a / b; }
+  } else if (h > sh) { h = sh; w = sh * a / b; }
   frame.style.width = w + 'px'; frame.style.height = h + 'px';
-  $('tl').style.setProperty('--fw', Math.max(w, 280) + 'px');
+  $('tl').style.setProperty('--fw', (isMobile.matches ? sw * .9 : Math.max(w, 280)) + 'px');
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   view.width = Math.round(w * dpr); view.height = Math.round(h * dpr);
+  if (isMobile.matches) placeSheet(); else panel.style.removeProperty('--sheet-top');
 }
 // ---- playback: smooth replay + loop on/off ----
 let start = performance.now(), clock = 0, looping = true, trans = null, lastState = null, paused = false, scrubbing = false;
@@ -410,8 +439,9 @@ const fileName = () => {
   return `${base}-${S.ratio.replace(':', 'x')}.gif`;
 };
 const yieldUI = () => new Promise(r => setTimeout(r, 0));
+let busy = false, cancelReq = false;
 gen.addEventListener('click', async () => {
-  if (gen.disabled) return;
+  if (busy) { cancelReq = true; genLabel.textContent = L().cancelled; return; }   // second click while exporting = cancel
   const [a, b] = ratioWH();
   const W = +$('gifSize').value, H = Math.round(W * b / a / 2) * 2, fps = +$('gifFps').value;
   const cnt = $('gifCount').value === 'all' ? photos().length : Math.min(+$('gifCount').value, photos().length);
@@ -425,11 +455,12 @@ gen.addEventListener('click', async () => {
     if (!palettes.has(idx)) { draw(sctx, W, H, PRE + idx * CL + 1.4); palettes.set(idx, quantize(sctx.getImageData(0, 0, W, H).data, 255, { format: 'rgb565' })); }
     return palettes.get(idx);
   };
-  gen.disabled = true; gifPreview.style.display = 'none';
+  busy = true; cancelReq = false; gen.classList.add('busy'); gifPreview.style.display = 'none';
   const enc = GIFEncoder();
   let prevIdx = null, prevPal = null, csDone = 0;
   try {
     for (let i = 0; i < n; i++) {
+      if (cancelReq) { sayError(L().cancelled); return; }
       const t = i / fps * gSpeed;
       draw(ctx, W, H, t);
       const pal = paletteFor(stateAt(t).idx);
@@ -442,7 +473,7 @@ gen.addEventListener('click', async () => {
         enc.writeFrame(out, W, H, { palette: fullPal, delay, transparent: true, transparentIndex: KEY, dispose: 1, repeat: 0 });
       } else enc.writeFrame(index, W, H, { palette: fullPal, delay, dispose: 1, repeat: 0 });
       prevIdx = index; prevPal = pal;
-      const pct = (i + 1) / n; bar.style.width = (pct * 100) + '%'; genLabel.textContent = L().creating(Math.round(pct * 100));
+      const pct = (i + 1) / n; bar.style.width = (pct * 100) + '%'; if (!cancelReq) genLabel.textContent = `${L().creating(Math.round(pct * 100))}  ·  ${L().stop}`;
       if (i % 3 === 0) await yieldUI();
     }
     enc.finish();
@@ -454,8 +485,8 @@ gen.addEventListener('click', async () => {
       const a = document.createElement('a'); a.href = gifPreview.src; a.download = fileName();
       document.body.appendChild(a); a.click(); a.remove(); say(L().saved(mb));
     } catch { say(L().manual(mb)); }
-  } catch (err) { say(L().failed + (err && err.message || err)); }
-  finally { gen.disabled = false; bar.style.width = '0'; genLabel.textContent = L().create; }
+  } catch (err) { sayError(L().failed + (err && err.message || err)); }
+  finally { busy = false; cancelReq = false; gen.classList.remove('busy'); bar.style.width = '0'; genLabel.textContent = L().create; }
 });
 
 // ================= boot =================
@@ -467,6 +498,38 @@ const ready = (async () => {
   await document.fonts.load(`900 40px ${S.family}`, 'ایران IRAN').catch(() => {});
   await document.fonts.ready; return true;
 })();
-layout(); window.addEventListener('resize', layout);
+layout(); window.addEventListener('resize', layout); isMobile.addEventListener('change', layout);
+
+// ---- phone: drag handle on the settings sheet ----
+// drag up = sheet slides over the preview, drag down = back; a tap toggles. Snaps to the nearer end on release.
+const handle = $('sheetHandle');
+let drag = null;
+const snapTo = up => {
+  sheetUp = up; sheetTop = null;
+  panel.classList.add('snap'); placeSheet();
+  setTimeout(() => panel.classList.remove('snap'), 280);
+};
+handle.addEventListener('pointerdown', e => {
+  if (!isMobile.matches) return;
+  panel.classList.remove('snap');
+  drag = { y: e.clientY, top: panel.getBoundingClientRect().top, moved: false };
+  handle.setPointerCapture(e.pointerId); handle.classList.add('dragging');
+});
+handle.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const dy = e.clientY - drag.y;
+  if (Math.abs(dy) > 5) drag.moved = true;
+  if (drag.moved) { sheetTop = drag.top + dy; placeSheet(); }
+});
+const endDrag = () => {
+  if (!drag) return;
+  const { moved } = drag; drag = null; handle.classList.remove('dragging');
+  if (!moved) { snapTo(!sheetUp); return; }
+  const [up, rest] = sheetStops();
+  snapTo(panel.getBoundingClientRect().top < (up + rest) / 2);
+};
+handle.addEventListener('pointerup', endDrag);
+handle.addEventListener('pointercancel', endDrag);
+handle.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); snapTo(!sheetUp); } });
 ready.then(() => { start = performance.now(); });
 requestAnimationFrame(tick);
