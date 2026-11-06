@@ -4,6 +4,24 @@ A browser-based typography animation tool. Type a word, and a capsule opens in t
 
 Supports **Persian, English and Arabic**: the full UI, text direction and panel side all switch with the language.
 
+**Live demo:** https://word-capsule-animation.vercel.app
+
+## Examples
+
+GIFs exported straight from the app (480 px, 25 fps, 3 photos, 4:5):
+
+<p align="center">
+  <img src="docs/example-fa.gif" width="320" alt="Persian example: the word ایران with a capsule revealing photos">
+  &nbsp;&nbsp;
+  <img src="docs/example-en.gif" width="320" alt="English example: the word TRAVEL with a capsule revealing photos">
+</p>
+
+## Screenshots
+
+![The app in Persian](docs/screenshot-fa.jpg)
+
+![The app in English](docs/screenshot-en.jpg)
+
 ## Features
 
 - Automatic kashida (letter stretch) placement for Persian and Arabic. Type `ـ` to choose the spot yourself.
