@@ -427,13 +427,13 @@ $('reset').addEventListener('click', () => {
   bgImg = null; bgName = ''; bgDark = false; $('bgUpload').classList.remove('show'); $('bgLabel').textContent = d.uploadBg;
   customFontName = ''; $('fontLabel').textContent = d.uploadFont;
   myImgs = []; defaultImgs = defaultAll.slice(); segM.disabled = true; setSource(false);
-  gifPreview.style.display = 'none'; gifPreview.removeAttribute('src');
+  gifSlot.classList.remove('has-gif'); gifPreview.removeAttribute('src');
   looping = true; setToggle(); setSpeed(1); layout(); restart(); flash(d.resetDone);
   const r = $('reset'); r.classList.remove('spin'); void r.offsetWidth; r.classList.add('spin');
 });
 
 // ================= GIF export =================
-const gen = $('generate'), bar = $('bar'), genLabel = $('genLabel'), gifPreview = $('gifPreview');
+const gen = $('generate'), bar = $('bar'), genLabel = $('genLabel'), gifPreview = $('gifPreview'), gifSlot = $('gifSlot');
 const fileName = () => {
   const base = (S.text || 'word').replace(/[\\/:*?"<>|ـ\s]+/g, '-').replace(/^-|-$/g, '') || 'word';
   return `${base}-${S.ratio.replace(':', 'x')}.gif`;
@@ -455,7 +455,7 @@ gen.addEventListener('click', async () => {
     if (!palettes.has(idx)) { draw(sctx, W, H, PRE + idx * CL + 1.4); palettes.set(idx, quantize(sctx.getImageData(0, 0, W, H).data, 255, { format: 'rgb565' })); }
     return palettes.get(idx);
   };
-  busy = true; cancelReq = false; gen.classList.add('busy'); gifPreview.style.display = 'none';
+  busy = true; cancelReq = false; gen.classList.add('busy');
   const enc = GIFEncoder();
   let prevIdx = null, prevPal = null, csDone = 0;
   try {
@@ -479,7 +479,7 @@ gen.addEventListener('click', async () => {
     enc.finish();
     const blob = new Blob([enc.bytes()], { type: 'image/gif' }), mb = (blob.size / 1048576).toFixed(1);
     if (gifPreview.src.startsWith('blob:')) URL.revokeObjectURL(gifPreview.src);
-    gifPreview.src = URL.createObjectURL(blob); gifPreview.style.display = 'block';
+    gifPreview.src = URL.createObjectURL(blob); gifSlot.classList.add('has-gif');
     // save straight away with a download link; the preview below stays as a fallback
     try {
       const a = document.createElement('a'); a.href = gifPreview.src; a.download = fileName();

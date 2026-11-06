@@ -204,7 +204,18 @@
   .toast.show { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
   @media (prefers-reduced-motion: reduce) { .toast { transition: opacity .2s ease; transform: translate(-50%, 0); } }
   .status { font-size: 12.5px; color: var(--muted); margin-top: 10px; min-height: 1.4em; text-align: center; line-height: 1.7; }
-  .preview-gif { display: none; margin-top: 12px; width: 100%; border-radius: 10px; border: 1px solid var(--line); }
+  .gif-box { margin-top: 14px; }
+  .genbar .status:empty { display: none; }          /* no blank row above the preview when there is no message */
+  .gif-slot { border-radius: 14px; border: 1px solid var(--line); background: var(--field); overflow: hidden; }
+  .preview-gif { display: none; width: 100%; }
+  .gif-slot.has-gif .preview-gif { display: block; }
+  .gif-slot.has-gif .gif-empty { display: none; }
+  .gif-empty {
+    min-height: 170px; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    color: var(--muted); font-size: 13px; line-height: 1.7; text-align: center;
+    border: 1.5px dashed #d9d9e1; border-radius: 13px; margin: 6px;
+  }
+  .gif-empty svg { width: 30px; height: 30px; opacity: .7; }
 
   /* ---------------- stage (left) ---------------- */
   .stage { grid-area: stage; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 28px; overflow: hidden; }

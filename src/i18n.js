@@ -31,7 +31,7 @@ export const I18N = {
     declined: 'ذخیره لغو شد. دوباره روی دکمه بزن.',
     manual: mb => `GIF آماده است (${mb} مگابایت) — روی پیش‌نمایش پایین راست‌کلیک کن و ذخیره کن.`,
     failed: 'ساخت GIF ناموفق بود: ',
-    stop: 'لغو', sheetHandle: 'بکش تا تنظیمات بزرگ‌تر شود', cancelled: 'ساخت GIF لغو شد.',
+    stop: 'لغو', gifPreviewTitle: 'پیش‌نمایش', gifPreviewEmpty: 'هنوز GIF ساخته نشده. بعد از دانلود اینجا نمایش داده می‌شود.', sheetHandle: 'بکش تا تنظیمات بزرگ‌تر شود', cancelled: 'ساخت GIF لغو شد.',
   },
   en: {
     dir: 'ltr', title: 'Word & Capsule Animation', word: 'IRAN',
@@ -63,7 +63,7 @@ export const I18N = {
     declined: 'Save cancelled. Press the button again.',
     manual: mb => `GIF ready (${mb} MB) — right-click the preview below and save it.`,
     failed: 'GIF export failed: ',
-    stop: 'Cancel', sheetHandle: 'Drag to resize the settings', cancelled: 'GIF export cancelled.',
+    stop: 'Cancel', gifPreviewTitle: 'Preview', gifPreviewEmpty: 'No GIF yet. It will show here after you download one.', sheetHandle: 'Drag to resize the settings', cancelled: 'GIF export cancelled.',
   },
   ar: {
     dir: 'rtl', title: 'رسوم الكلمة والكبسولة المتحركة', word: 'إيران',
@@ -95,6 +95,6 @@ export const I18N = {
     declined: 'أُلغي الحفظ. اضغط الزر مرة أخرى.',
     manual: mb => `ملف GIF جاهز (${mb} ميغابايت) — انقر بزر الفأرة الأيمن على المعاينة واحفظها.`,
     failed: 'فشل إنشاء GIF: ',
-    stop: 'إلغاء', sheetHandle: 'اسحب لتغيير حجم الإعدادات', cancelled: 'أُلغي إنشاء GIF.',
+    stop: 'إلغاء', gifPreviewTitle: 'معاينة', gifPreviewEmpty: 'لم يُنشأ ملف GIF بعد. سيظهر هنا بعد التنزيل.', sheetHandle: 'اسحب لتغيير حجم الإعدادات', cancelled: 'أُلغي إنشاء GIF.',
   },
 };

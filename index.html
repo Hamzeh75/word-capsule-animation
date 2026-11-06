@@ -132,7 +132,16 @@
     </button>
     <div class="status" id="status"></div>
   </div>
-  <img class="preview-gif" id="gifPreview" alt="GIF">
+  <div class="gif-box">
+    <div class="label"><span data-t="gifPreviewTitle"></span></div>
+    <div class="gif-slot" id="gifSlot">
+      <img class="preview-gif" id="gifPreview" alt="GIF">
+      <div class="gif-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m4 18 5-5 3.5 3.5L15 14l5 5"/></svg>
+        <span data-t="gifPreviewEmpty"></span>
+      </div>
+    </div>
+  </div>
 </aside>
 
 <main class="stage" id="stage">
