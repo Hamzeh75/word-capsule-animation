@@ -738,6 +738,33 @@ const endDrag = () => {
 handle.addEventListener('pointerup', endDrag);
 handle.addEventListener('pointercancel', endDrag);
 handle.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); snapTo(sheetPos === 'rest' ? 'up' : 'rest'); } });
+// pulling the settings down while they are scrolled to the very top moves the whole sheet down with the finger
+// (like a phone's bottom sheet); on release it settles on the nearest stop, or one stop lower after a clear pull
+let pull = null;
+panel.addEventListener('touchstart', e => {
+  if (!isMobile.matches || sheetPos === 'rest' || handle.contains(e.target) || e.touches.length > 1) { pull = null; return; }
+  pull = { y: e.touches[0].clientY, top: panel.getBoundingClientRect().top, from: sheetPos, active: false };
+}, { passive: true });
+panel.addEventListener('touchmove', e => {
+  if (!pull) return;
+  const dy = e.touches[0].clientY - pull.y;
+  if (!pull.active) {
+    if (panel.scrollTop > 0 || dy < 6) { if (dy < -6 || panel.scrollTop > 0) pull = null; return; }   // normal scrolling
+    pull.active = true; pull.y = e.touches[0].clientY; panel.classList.remove('snap');
+  }
+  e.preventDefault();
+  sheetTop = pull.top + Math.max(0, e.touches[0].clientY - pull.y); placeSheet();
+}, { passive: false });
+const endPull = () => {
+  if (!pull || !pull.active) { pull = null; return; }
+  const [up, rest] = sheetStops(), half = (up + rest) / 2, y = panel.getBoundingClientRect().top, moved = y - pull.top;
+  const order = ['up', 'half', 'rest'], at = { up, half, rest };
+  let pick = order.reduce((p, k) => Math.abs(at[k] - y) < Math.abs(at[p] - y) ? k : p, 'up');
+  if (pick === pull.from && moved > 60) pick = order[Math.min(2, order.indexOf(pull.from) + 1)];
+  pull = null; snapTo(pick);
+};
+panel.addEventListener('touchend', endPull);
+panel.addEventListener('touchcancel', endPull);
 // many people never find the handle: as soon as they start using the settings (scroll, tap, type), raise the sheet halfway
 const autoRaise = () => { if (isMobile.matches && sheetPos === 'rest' && !drag) snapTo('half'); };
 panel.addEventListener('scroll', () => { if (panel.scrollTop > 4) autoRaise(); }, { passive: true });
