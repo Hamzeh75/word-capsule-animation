@@ -71,6 +71,7 @@ function applyLang(next) {
   requestAnimationFrame(layout); setTimeout(layout, 450);
   setToggle(); say(''); if (defaultAll.length) renderThumbs();
   refreshGifInfo();
+  if (typeof starTotal !== 'undefined' && starTotal) showStars();   // star count in the current digits
 }
 
 // ================= data =================
@@ -93,7 +94,7 @@ const grainImg = new Image(); grainImg.src = IMG + 'grain.jpg';
 let bgImg = null, bgDark = false;
 
 const LATIN_FAMILY = '"Proxima Nova", "ProximaNova-Black", "Figtree", sans-serif';
-const S = { text: 'ایران', splitAt: 'auto', kashida: 2, ratio: '1:1', bg: 'grain', family: '"Ravi", "Ravi Variable", "RaviVF", "RaviLocal", "Vazirmatn"' };
+const S = { text: 'ایران', splitAt: 'auto', weight: 900, kashida: 2, ratio: '1:1', bg: 'grain', family: '"Ravi", "Vazirmatn"' };
 const DEFAULT_FAMILY = S.family;
 
 // ================= splitting the word =================
@@ -304,10 +305,10 @@ function draw(ctx, W, H, t, ov) {
   const gapE = sp.kash ? -0.12 : 0.07;               // kashida tucks under the capsule; Latin keeps a small gap
   let fs = Math.min(W * .15, H * .24);
   const fam = sp.rtl || S.family !== DEFAULT_FAMILY ? S.family : LATIN_FAMILY;
-  ctx.font = `900 ${fs}px ${fam}`; ctx.direction = sp.rtl ? 'rtl' : 'ltr';
+  ctx.font = `${S.weight} ${fs}px ${fam}`; ctx.direction = sp.rtl ? 'rtl' : 'ltr';
   let wA = ctx.measureText(sp.a).width, wB = ctx.measureText(sp.b).width;
   const full = wA + wB + (OPEN + 2 * gapE) * fs;
-  if (full > W * .9) { const k = (W * .9) / full; fs *= k; wA *= k; wB *= k; ctx.font = `900 ${fs}px ${fam}`; }
+  if (full > W * .9) { const k = (W * .9) / full; fs *= k; wA *= k; wB *= k; ctx.font = `${S.weight} ${fs}px ${fam}`; }
 
   const pw = st.w * fs, ph = st.h * fs, gap = gapE * fs;
   const rowW = wA + wB + pw + 2 * gap, cy = H / 2;
@@ -483,6 +484,11 @@ function refreshSplitOptions() {
   S.splitAt = sel.value;
 }
 $('splitAt').addEventListener('change', e => { S.splitAt = e.target.value; });
+// font weight: load that weight of the word's fonts before the canvas needs it
+$('weight').addEventListener('change', e => {
+  S.weight = +e.target.value;
+  for (const fam of [S.family, LATIN_FAMILY]) document.fonts.load(`${S.weight} 40px ${fam}`, 'ایران IRAN').catch(() => {});
+});
 $('kashida').addEventListener('change', e => S.kashida = +e.target.value);
 $('ratio').addEventListener('change', e => { S.ratio = e.target.value; layout(); });
 $('bg').addEventListener('change', e => {
@@ -605,7 +611,7 @@ setSpeed(1);
 $('reset').addEventListener('click', () => {
   const d = L();
   S.text = d.word; $('text').value = d.word;
-  S.kashida = 2; S.splitAt = 'auto'; refreshSplitOptions(); S.ratio = '1:1'; S.bg = 'grain'; S.family = DEFAULT_FAMILY;
+  S.kashida = 2; S.weight = 900; S.splitAt = 'auto'; refreshSplitOptions(); S.ratio = '1:1'; S.bg = 'grain'; S.family = DEFAULT_FAMILY;
   document.querySelectorAll('select[data-default]').forEach(sel => sel.value = sel.dataset.default);
   bgImg = null; bgName = ''; bgDark = false; $('bgUpload').classList.remove('show'); $('bgLabel').textContent = d.uploadBg;
   customFontName = ''; $('fontLabel').textContent = d.uploadFont;
@@ -687,10 +693,46 @@ gen.addEventListener('click', async () => {
     try {
       const a = document.createElement('a'); a.href = gifPreview.src; a.download = fileName();
       document.body.appendChild(a); a.click(); a.remove(); say(L().saved(mb));
+      setTimeout(askForStar, 1200);
     } catch { say(L().manual(mb)); }
   } catch (err) { sayError(L().failed + (err && err.message || err)); }
   finally { exportLimit = 0; bgSpin = liveSpin; busy = false; cancelReq = false; gen.classList.remove('busy'); bar.style.width = '0'; genLabel.textContent = L().create; }
 });
+
+// ================= GitHub star prompt (once per visitor, after their first saved GIF) =================
+const starPop = $('starPop');
+const closeStar = () => { starPop.classList.remove('show'); setTimeout(() => { starPop.hidden = true; }, 250); };
+function askForStar() {
+  try { if (localStorage.getItem('kc-star-asked')) return; localStorage.setItem('kc-star-asked', '1'); } catch {}
+  starPop.dir = document.documentElement.dir; starPop.hidden = false;
+  requestAnimationFrame(() => starPop.classList.add('show'));
+}
+$('starClose').addEventListener('click', closeStar);
+$('starLater').addEventListener('click', closeStar);
+$('starGo').addEventListener('click', () => setTimeout(closeStar, 300));
+starPop.addEventListener('click', e => { if (e.target === starPop) closeStar(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !starPop.hidden) closeStar(); });
+
+// star count in the footer, shown once the repo has at least one star (cached for the visit)
+let starTotal = 0;
+const showStars = () => {
+  const on = starTotal > 0;
+  $('stars').hidden = !on; document.querySelector('.stars-dot').hidden = !on;
+  if (on) { $('starCount').textContent = num(starTotal); $('stars').title = L().starsTitle(num(starTotal)); }
+};
+(async () => {
+  try {
+    const cached = sessionStorage.getItem('kc-stars');
+    if (cached !== null) starTotal = +cached;
+    else {
+      const r = await fetch('https://api.github.com/repos/Hamzeh75/word-capsule-animation', { headers: { Accept: 'application/vnd.github+json' } });
+      if (!r.ok) return;
+      starTotal = (await r.json()).stargazers_count || 0;
+      sessionStorage.setItem('kc-stars', String(starTotal));
+    }
+    showStars();
+  } catch {}
+})();
 
 // ================= boot =================
 // every visit opens in English; the visitor can switch language from the flag button

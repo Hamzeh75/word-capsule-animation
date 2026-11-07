@@ -4,3 +4,5 @@ dist/
 .vercel
 *.log
 .env*
+word-capsule-fonts/
+public/fonts/

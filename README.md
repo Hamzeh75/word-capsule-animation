@@ -40,7 +40,7 @@ GIFs exported straight from the app (480 px, 25 fps, 3 photos, 4:5):
 | UI | Vanilla HTML / CSS / JavaScript (ES modules) |
 | Rendering | Canvas 2D with a custom spring-based timeline |
 | GIF encoding | [gifenc](https://github.com/mattdesl/gifenc) (MIT) |
-| Font | Vazirmatn (Google Fonts). Ravi is used automatically if installed. |
+| Fonts | Ravi (licensed, served from a separate fonts deployment) for Persian and Arabic; Proxima Nova if installed, otherwise Figtree (Google Fonts), for English; Vazirmatn as a fallback |
 
 There is no backend. The build output is a static site.
 
@@ -114,11 +114,7 @@ vercel --prod   # production deployment
 
 Wide images (around 2.7:1) fill the capsule with the least cropping. Keep them around 1800 px wide.
 
-**Embedding the Ravi font.** Ravi is a commercial font, so it is not bundled. If you have a licence, put `Ravi-Black.woff2` in `public/fonts/` and add this to the top of `src/styles.css`:
-
-```css
-@font-face { font-family: "Ravi"; font-weight: 900; font-display: swap; src: url("/fonts/Ravi-Black.woff2") format("woff2"); }
-```
+**Fonts.** Ravi is licensed for web use but its files are **not** in this repository. They are served from a separate Vercel project, `https://word-capsule-fonts.vercel.app`, which is deployed by hand from a local `word-capsule-fonts/` folder (ignored by git). The `@font-face` rules at the top of `src/styles.css` point there. Without access to that project the app falls back to Vazirmatn.
 
 **Translations.** All UI text lives in `src/i18n.js`.
 
