@@ -76,7 +76,7 @@ const photos = () => (useMine && myImgs.length ? myImgs : defaultImgs);
 const grainImg = new Image(); grainImg.src = IMG + 'grain.jpg';
 let bgImg = null, bgDark = false;
 
-const S = { text: 'ایران', kashida: 2, ratio: '4:5', bg: 'grain', family: '"Ravi", "Ravi Variable", "RaviVF", "RaviLocal", "Vazirmatn"' };
+const S = { text: 'ایران', kashida: 2, ratio: '1:1', bg: 'grain', family: '"Ravi", "Ravi Variable", "RaviVF", "RaviLocal", "Vazirmatn"' };
 
 // ================= splitting the word =================
 const NO_JOIN_AFTER = new Set('اآأإٱدذرزژوؤةءى'.split(''));
@@ -422,7 +422,7 @@ const DEFAULT_FAMILY = S.family;
 $('reset').addEventListener('click', () => {
   const d = L();
   S.text = d.word; $('text').value = d.word;
-  S.kashida = 2; S.ratio = '4:5'; S.bg = 'grain'; S.family = DEFAULT_FAMILY;
+  S.kashida = 2; S.ratio = '1:1'; S.bg = 'grain'; S.family = DEFAULT_FAMILY;
   document.querySelectorAll('select[data-default]').forEach(sel => sel.value = sel.dataset.default);
   bgImg = null; bgName = ''; bgDark = false; $('bgUpload').classList.remove('show'); $('bgLabel').textContent = d.uploadBg;
   customFontName = ''; $('fontLabel').textContent = d.uploadFont;
@@ -537,11 +537,17 @@ const autoRaise = () => { if (isMobile.matches && sheetPos === 'rest' && !drag) 
 panel.addEventListener('scroll', () => { if (panel.scrollTop > 4) autoRaise(); }, { passive: true });
 panel.addEventListener('focusin', e => { if (e.target !== handle && !e.target.closest('.genbar')) autoRaise(); });
 panel.addEventListener('click', e => { if (!handle.contains(e.target) && !e.target.closest('.genbar')) setTimeout(autoRaise, 0); });   // after the tap has done its job
-// tapping the uncovered preview area while the sheet is raised lowers it back to its resting size
-// (capture phase, so that tap does not also pause the preview or hit the timeline)
-stage.addEventListener('click', e => {
-  if (!isMobile.matches || sheetPos === 'rest') return;
-  e.stopPropagation(); e.preventDefault(); snapTo('rest');
+// any touch outside the sheet while it is raised lowers it back to its resting size.
+// pointerdown (not click) so swipes and taps on plain background count too; the click that follows is swallowed
+// so the same touch does not also replay the preview or hit the timeline.
+let swallowClick = false;
+document.addEventListener('pointerdown', e => {
+  if (!isMobile.matches || sheetPos === 'rest' || panel.contains(e.target) || e.target.closest('.toast')) return;
+  swallowClick = true; setTimeout(() => { swallowClick = false; }, 600);
+  snapTo('rest');
+}, true);
+document.addEventListener('click', e => {
+  if (swallowClick && !panel.contains(e.target)) { swallowClick = false; e.stopPropagation(); e.preventDefault(); }
 }, true);
 ready.then(() => { start = performance.now(); });
 requestAnimationFrame(tick);
