@@ -7,11 +7,11 @@ It works in **English, Persian (فارسی) and Arabic (العربية)**. Text 
 **Live app:** https://word-capsule-animation.vercel.app
 
 <p align="center">
-  <img src="docs/output-en.webp" width="49%" alt="Output frame: the word IRAN in heavy black letters on a light grain background, split in the middle where the capsule opens">
-  <img src="docs/output-fa.webp" width="49%" alt="Output frame: the Persian word ایران in Ravi Black on a light grain background, with a kashida where the capsule opens">
+  <img src="docs/output-en.gif" width="49%" alt="Exported GIF: the word IRAN in heavy black letters on a light grain background; a capsule opens between IR and AN and cycles through photos">
+  <img src="docs/output-fa.gif" width="49%" alt="Exported GIF: the Persian word ایران in Ravi Black on a light grain background; a capsule opens on the kashida and cycles through photos">
 </p>
 
-<p align="center"><sub>Frames from the exported GIF, at the moment the capsule is about to open. English uses Proxima Nova (Figtree as a free fallback). Persian and Arabic use Ravi.</sub></p>
+<p align="center"><sub>GIFs exported straight from the app: 1080 × 608 (16:9), 25 fps, 3 photos, Noise background. English uses Proxima Nova (Figtree as a free fallback). Persian and Arabic use Ravi.</sub></p>
 
 ---
 
