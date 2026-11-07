@@ -218,7 +218,7 @@ const frame = $('frame'), view = $('view'), vctx = view.getContext('2d'), stage 
 const ratioWH = () => S.ratio.split(':').map(Number);
 const isMobile = window.matchMedia('(max-width: 860px)');
 // phone only: the settings sheet rests just under the timeline, or is pulled up over the preview
-let sheetUp = false, sheetTop = null;
+let sheetPos = 'rest', sheetTop = null;   // 'rest' | 'half' | 'up'
 const sheetStops = () => {
   const r = parseFloat(getComputedStyle(document.body).getPropertyValue('--sheet-r')) || 24;
   const rest = stage.offsetHeight - r;                                   // sheet edge overlaps the bottom of the stage
@@ -227,7 +227,7 @@ const sheetStops = () => {
 };
 const placeSheet = () => {
   const [up, rest] = sheetStops();
-  const top = sheetTop ?? (sheetUp ? up : rest);
+  const top = sheetTop ?? { up, half: (up + rest) / 2, rest }[sheetPos];
   panel.style.setProperty('--sheet-top', Math.max(up, Math.min(rest, top)) + 'px');
 };
 function layout() {
@@ -504,8 +504,8 @@ layout(); window.addEventListener('resize', layout); isMobile.addEventListener('
 // drag up = sheet slides over the preview, drag down = back; a tap toggles. Snaps to the nearer end on release.
 const handle = $('sheetHandle');
 let drag = null;
-const snapTo = up => {
-  sheetUp = up; sheetTop = null;
+const snapTo = pos => {
+  sheetPos = pos; sheetTop = null;
   panel.classList.add('snap'); placeSheet();
   setTimeout(() => panel.classList.remove('snap'), 280);
 };
@@ -524,12 +524,24 @@ handle.addEventListener('pointermove', e => {
 const endDrag = () => {
   if (!drag) return;
   const { moved } = drag; drag = null; handle.classList.remove('dragging');
-  if (!moved) { snapTo(!sheetUp); return; }
-  const [up, rest] = sheetStops();
-  snapTo(panel.getBoundingClientRect().top < (up + rest) / 2);
+  if (!moved) { snapTo(sheetPos === 'rest' ? 'up' : 'rest'); return; }
+  // snap to the nearest of the three stops
+  const [up, rest] = sheetStops(), half = (up + rest) / 2, y = panel.getBoundingClientRect().top;
+  snapTo([['up', up], ['half', half], ['rest', rest]].sort((a, b) => Math.abs(a[1] - y) - Math.abs(b[1] - y))[0][0]);
 };
 handle.addEventListener('pointerup', endDrag);
 handle.addEventListener('pointercancel', endDrag);
-handle.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); snapTo(!sheetUp); } });
+handle.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); snapTo(sheetPos === 'rest' ? 'up' : 'rest'); } });
+// many people never find the handle: as soon as they start using the settings (scroll, tap, type), raise the sheet halfway
+const autoRaise = () => { if (isMobile.matches && sheetPos === 'rest' && !drag) snapTo('half'); };
+panel.addEventListener('scroll', () => { if (panel.scrollTop > 4) autoRaise(); }, { passive: true });
+panel.addEventListener('focusin', e => { if (e.target !== handle && !e.target.closest('.genbar')) autoRaise(); });
+panel.addEventListener('click', e => { if (!handle.contains(e.target) && !e.target.closest('.genbar')) setTimeout(autoRaise, 0); });   // after the tap has done its job
+// tapping the uncovered preview area while the sheet is raised lowers it back to its resting size
+// (capture phase, so that tap does not also pause the preview or hit the timeline)
+stage.addEventListener('click', e => {
+  if (!isMobile.matches || sheetPos === 'rest') return;
+  e.stopPropagation(); e.preventDefault(); snapTo('rest');
+}, true);
 ready.then(() => { start = performance.now(); });
 requestAnimationFrame(tick);
