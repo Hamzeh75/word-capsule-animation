@@ -1,38 +1,46 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f6f6f8">
-<title>انیمیشن کلمه و کپسول</title>
+<title>Word &amp; Capsule Animation</title>
 <meta name="description" content="Type a word, add photos, and export a smooth capsule-reveal GIF — Persian, English and Arabic.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&family=Vazirmatn:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
-<aside class="panel" id="panel" dir="rtl">
+<aside class="panel" id="panel" dir="ltr">
   <div class="sheet-handle" id="sheetHandle" role="button" tabindex="0" data-title-t="sheetHandle"><span></span></div>
-  <div class="lang" id="lang">
-    <button class="lang-btn" id="langBtn" aria-haspopup="listbox">
-      <span class="flag" id="langFlag">🇮🇷</span><span id="langName">فارسی</span>
-      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-    </button>
-    <div class="lang-menu" role="listbox">
-      <button class="lang-item" data-lang="fa"><span class="flag">🇮🇷</span>فارسی<small>Persian</small></button>
-      <button class="lang-item" data-lang="en"><span class="flag">🇺🇸</span>English<small>English</small></button>
-      <button class="lang-item" data-lang="ar"><span class="flag">🇸🇦</span>العربية<small>Arabic</small></button>
+  <div class="head">
+    <div class="head-text">
+      <div class="brand" data-t="brand"></div>
+      <div class="sub" data-t="sub"></div>
+    </div>
+    <div class="lang" id="lang">
+      <button class="lang-btn" id="langBtn" aria-haspopup="listbox" data-title-t="language">
+        <span class="flag" id="langFlag"></span>
+        <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="lang-menu" role="listbox">
+        <button class="lang-item" data-lang="en"><span class="flag"></span><span class="ln">English</span><small>English</small></button>
+        <button class="lang-item" data-lang="fa"><span class="flag"></span><span class="ln">Persian</span><small>فارسی</small></button>
+        <button class="lang-item" data-lang="ar"><span class="flag"></span><span class="ln">Arabic</span><small>العربية</small></button>
+      </div>
     </div>
   </div>
 
-  <div class="brand" data-t="brand"></div>
-  <div class="sub" data-t="sub"></div>
+  <div class="field">
+    <div class="label"><span data-t="text"></span><span class="req" aria-hidden="true">*</span></div>
+    <input class="control" id="text" type="text" value="IRAN" maxlength="24" dir="auto">
+    <div class="hint" data-t="textHint"></div>
+  </div>
 
   <div class="field">
-    <div class="label"><span data-t="text"></span> <span class="req">*</span></div>
-    <input class="control" id="text" type="text" value="ایران" maxlength="24" dir="auto">
-    <div class="hint" data-t="textHint"></div>
+    <div class="label"><span data-t="splitAt"></span> <span class="help" data-tip-t="splitAtTip">?</span></div>
+    <select class="control" id="splitAt"></select>
   </div>
 
   <div class="field" id="kashidaField">
@@ -47,15 +55,15 @@
 
   <div class="field">
     <div class="label"><span data-t="photos"></span> <span class="help" data-tip-t="photosTip">?</span></div>
-    <label class="upload">
+    <div class="seg">
+      <button id="useDefault" class="on" data-t="defaultPhotos"></button>
+      <button id="useMine" data-t="myPhotos"></button>
+    </div>
+    <label class="upload photo-upload" id="photoUpload">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0-4 4m4-4 4 4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
       <span data-t="uploadPhotos"></span>
       <input type="file" id="imgfile" accept="image/*" multiple>
     </label>
-    <div class="seg" style="margin-top:10px">
-      <button id="useDefault" class="on" data-t="defaultPhotos"></button>
-      <button id="useMine" disabled data-t="myPhotos"></button>
-    </div>
     <div class="thumbs" id="thumbs"></div>
   </div>
 
@@ -102,7 +110,7 @@
   <div class="field row">
     <div>
       <div class="label"><span data-t="gifSize"></span> <span class="help" data-tip-t="gifSizeTip">?</span></div>
-      <select class="control" id="gifSize" data-opts="sizeOpts" data-default="480"></select>
+      <select class="control" id="gifSize" data-opts="sizeOpts" data-default="1080"></select>
     </div>
     <div>
       <div class="label"><span data-t="fps"></span> <span class="help" data-tip-t="fpsTip">?</span></div>
@@ -112,8 +120,9 @@
 
   <div class="field">
     <div class="label"><span data-t="gifCount"></span> <span class="help" data-tip-t="gifCountTip">?</span></div>
-    <select class="control" id="gifCount" data-opts="countOpts" data-default="3"></select>
+    <select class="control" id="gifCount" data-opts="countOpts" data-default="all"></select>
   </div>
+  <div class="estimate" id="estimate" aria-live="polite"></div>
 
   <div class="genbar">
     <button class="generate" id="generate">

@@ -9,6 +9,13 @@ const IMG = import.meta.env.BASE_URL + 'img/';
 
 let lang = 'fa';
 const L = () => I18N[lang];
+// small drawn flags (emoji flags sit at different heights on each system, and Windows shows letters instead)
+const FLAGS = {
+  fa: '<svg viewBox="0 0 21 15"><rect width="21" height="5" fill="#239f40"/><rect y="5" width="21" height="5" fill="#fff"/><rect y="10" width="21" height="5" fill="#da0000"/><path d="M10.5 6.1c-.9.3-1.3 1-1.3 1.5 0 .6.5 1.2 1.3 1.4.8-.2 1.3-.8 1.3-1.4 0-.5-.4-1.2-1.3-1.5Z" fill="none" stroke="#da0000" stroke-width=".55"/><path d="M10.5 6.4v2.4" stroke="#da0000" stroke-width=".55"/></svg>',
+  en: '<svg viewBox="0 0 21 15"><rect width="21" height="15" fill="#fff"/><g fill="#b22234"><rect width="21" height="1.154"/><rect y="2.308" width="21" height="1.154"/><rect y="4.615" width="21" height="1.154"/><rect y="6.923" width="21" height="1.154"/><rect y="9.231" width="21" height="1.154"/><rect y="11.538" width="21" height="1.154"/><rect y="13.846" width="21" height="1.154"/></g><rect width="9" height="8.077" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.5" cy="1.4" r=".38"/><circle cx="3.5" cy="1.4" r=".38"/><circle cx="5.5" cy="1.4" r=".38"/><circle cx="7.5" cy="1.4" r=".38"/><circle cx="2.5" cy="2.9" r=".38"/><circle cx="4.5" cy="2.9" r=".38"/><circle cx="6.5" cy="2.9" r=".38"/><circle cx="1.5" cy="4.4" r=".38"/><circle cx="3.5" cy="4.4" r=".38"/><circle cx="5.5" cy="4.4" r=".38"/><circle cx="7.5" cy="4.4" r=".38"/><circle cx="2.5" cy="5.9" r=".38"/><circle cx="4.5" cy="5.9" r=".38"/><circle cx="6.5" cy="5.9" r=".38"/></g></svg>',
+  ar: '<svg viewBox="0 0 21 15"><rect width="21" height="15" fill="#006c35"/><path d="M5.2 5.6c.8-.6 1.6.4 2.4-.2s1.6.4 2.4-.2 1.6.4 2.4-.2 1.6.4 2.4-.2" fill="none" stroke="#fff" stroke-width=".7" stroke-linecap="round"/><path d="M5.6 9.6h9.2" stroke="#fff" stroke-width=".7" stroke-linecap="round"/><path d="M14.8 9.6l1-.6" stroke="#fff" stroke-width=".7" stroke-linecap="round"/></svg>',
+};
+const num = (x, d = 0) => Number(x).toLocaleString(lang === 'fa' ? 'fa-IR' : lang === 'ar' ? 'ar-EG' : 'en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
 const $ = id => document.getElementById(id);
 const panel = $('panel'), status = $('status');
 let sayTimer = 0;
@@ -39,6 +46,7 @@ function applyLang(next) {
     el.textContent = d[el.dataset.t];
   });
   document.querySelectorAll('[data-tip-t]').forEach(el => el.dataset.tip = d[el.dataset.tipT]);
+  document.querySelectorAll('.help').forEach(el => el.textContent = d.dir === 'rtl' ? '؟' : '?');   // Persian/Arabic question mark
   document.querySelectorAll('[data-title-t]').forEach(el => { el.title = d[el.dataset.titleT]; el.setAttribute('aria-label', d[el.dataset.titleT]); });
   document.querySelectorAll('select[data-opts]').forEach(sel => {
     const cur = sel.value || sel.dataset.default;
@@ -46,15 +54,23 @@ function applyLang(next) {
     sel.value = cur;
   });
   $('text').placeholder = d.placeholder;
-  if (!S.text.trim() || S.text === prevWord) { S.text = d.word; $('text').value = d.word; }
-  document.querySelectorAll('.lang-item').forEach(b => b.classList.toggle('on', b.dataset.lang === next));
+  if (!S.text.trim() || S.text === prevWord) { S.text = d.word; $('text').value = d.word; S.splitAt = 'auto'; }
+  refreshSplitOptions();
+  // language names are written in the language the page is in; the native name sits beside it when it differs
+  const NATIVE = { en: 'English', fa: 'فارسی', ar: 'العربية' };
+  document.querySelectorAll('.lang-item').forEach(b => {
+    const code = b.dataset.lang, name = d.langNames[code];
+    b.classList.toggle('on', code === next);
+    b.querySelector('.ln').textContent = name;
+    b.querySelector('small').textContent = name === NATIVE[code] ? '' : NATIVE[code];
+  });
   const cur = document.querySelector(`.lang-item[data-lang="${next}"]`);
-  $('langFlag').textContent = cur.querySelector('.flag').textContent;
-  $('langName').textContent = cur.childNodes[1].textContent;
+  $('langFlag').innerHTML = FLAGS[next];
   document.body.classList.toggle('ltr', d.dir === 'ltr');
   $('kashidaField').style.display = next === 'en' ? 'none' : '';
   requestAnimationFrame(layout); setTimeout(layout, 450);
   setToggle(); say(''); if (defaultAll.length) renderThumbs();
+  refreshGifInfo();
   try { localStorage.setItem('kc-lang', next); } catch {}
 }
 
@@ -72,11 +88,14 @@ const DEFAULTS = [
 ];
 const load = src => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
 let defaultAll = [], defaultImgs = [], myImgs = [], useMine = false, customFontName = '', bgName = '';
-const photos = () => (useMine && myImgs.length ? myImgs : defaultImgs);
+let exportLimit = 0;   // while exporting: only the photos that go into the GIF, so its last frame leads back into the first
+const photos = () => { const l = useMine && myImgs.length ? myImgs : defaultImgs; return exportLimit ? l.slice(0, exportLimit) : l; };
 const grainImg = new Image(); grainImg.src = IMG + 'grain.jpg';
 let bgImg = null, bgDark = false;
 
-const S = { text: 'ایران', kashida: 2, ratio: '1:1', bg: 'grain', family: '"Ravi", "Ravi Variable", "RaviVF", "RaviLocal", "Vazirmatn"' };
+const LATIN_FAMILY = '"Proxima Nova", "ProximaNova-Black", "Figtree", sans-serif';
+const S = { text: 'ایران', splitAt: 'auto', kashida: 2, ratio: '1:1', bg: 'grain', family: '"Ravi", "Ravi Variable", "RaviVF", "RaviLocal", "Vazirmatn"' };
+const DEFAULT_FAMILY = S.family;
 
 // ================= splitting the word =================
 const NO_JOIN_AFTER = new Set('اآأإٱدذرزژوؤةءى'.split(''));
@@ -88,6 +107,15 @@ function split(raw) {
   if (!w) return { a: '', b: '', rtl: true, kash: false };
   if (!isRTL(w)) { const m = Math.ceil(w.length / 2); return { a: w.slice(0, m), b: w.slice(m), rtl: false, kash: false }; }
   const T = 'ـ'.repeat(S.kashida);
+  if (S.splitAt !== 'auto') {                        // the user picked the letter the capsule follows
+    const plain = w.replace(/ـ/g, ''), at = Math.min(+S.splitAt, plain.length - 1);
+    if (at >= 1) {
+      const a = plain.slice(0, at), b = plain.slice(at), x = a[a.length - 1];
+      if (!isRTL(plain)) return { a, b, rtl: false, kash: false };
+      const joins = isLetter(x) && !NO_JOIN_AFTER.has(x) && isLetter(b[0]);   // only joined letters take a kashida
+      return joins ? { a: a + T, b: T + b, rtl: true, kash: true } : { a, b, rtl: true, kash: false };
+    }
+  }
   const k = w.indexOf('ـ');
   if (k !== -1) return { a: w.slice(0, k).replace(/ـ+$/, '') + T, b: T + w.slice(k).replace(/^ـ+/, ''), rtl: true, kash: true };
   const mid = (w.length - 1) / 2; let best = -1, bestD = 1e9;
@@ -135,6 +163,118 @@ function stateAt(t) {
   return { w, h, idx: idx % N, since };
 }
 
+// ================= background from the photo =================
+// Reads each photo once and turns its two strongest hues into a soft gradient that sits behind the word.
+// Bright photos get a pastel gradient with dark text; dark photos get a deep gradient with light text.
+const toHsl = (r, g, b) => {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  if (!d) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, s, l];
+};
+const toRgb = (h, s, l) => {
+  const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+  const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+};
+const photoTones = new WeakMap();
+const BG_FADE = .7;   // seconds the background takes to move to the next photo's colours
+let bgSpin = 9;       // seconds per full turn of the photo gradient (the GIF export adjusts it so the loop is seamless)
+// 4×4 ordered dither for GIF frames: fixed per pixel, so unchanged areas stay identical between frames
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v / 16 - .47) * 7);
+const dither = (px, W) => {
+  for (let i = 0, p = 0; i < px.length; i += 4, p++) {
+    const o = BAYER[((p / W | 0) & 3) * 4 + (p % W & 3)];
+    px[i] += o; px[i + 1] += o; px[i + 2] += o;
+  }
+};
+function tonesOf(img) {
+  if (photoTones.has(img)) return photoTones.get(img);
+  const N = 40, c = document.createElement('canvas'); c.width = c.height = N;
+  const x = c.getContext('2d', { willReadFrequently: true });
+  x.drawImage(img, 0, 0, N, N);
+  let d; try { d = x.getImageData(0, 0, N, N).data; } catch { d = null; }
+  const bins = Array.from({ length: 12 }, () => ({ w: 0, r: 0, g: 0, b: 0 }));
+  let lum = 0, n = 0, ar = 0, ag = 0, ab = 0;
+  for (let i = 0; d && i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2], [h, sat, l] = toHsl(r, g, b);
+    lum += .2126 * r / 255 + .7152 * g / 255 + .0722 * b / 255; n++; ar += r; ag += g; ab += b;
+    const w = sat * (1 - Math.abs(l - .5) * 1.6);             // vivid mid-tones count most
+    if (w <= 0) continue;
+    const bin = bins[Math.floor(h / 30) % 12]; bin.w += w; bin.r += r * w; bin.g += g * w; bin.b += b * w;
+  }
+  const avg = n ? [ar / n, ag / n, ab / n] : [200, 200, 200];
+  const order = bins.map((bn, i) => ({ ...bn, i })).filter(bn => bn.w > 0).sort((p, q) => q.w - p.w);
+  const colOf = bn => [bn.r / bn.w, bn.g / bn.w, bn.b / bn.w];
+  const A = order[0] ? colOf(order[0]) : avg;
+  const hueGap = bn => Math.min(Math.abs(bn.i - order[0].i), 12 - Math.abs(bn.i - order[0].i));
+  const far = order.find(bn => hueGap(bn) >= 2 && hueGap(bn) <= 4 && bn.w > order[0].w * .12);
+  const [hA, sA] = toHsl(...A);
+  const B = far ? colOf(far) : toRgb((hA + 35) % 360, sA, .5);  // no second hue: use a close neighbour
+  const [hB, sB] = toHsl(...B);
+  // a third colour for the third blob: another hue from the photo, or a step the other way round the wheel
+  const third = order.find(bn => bn !== far && bn !== order[0] && hueGap(bn) >= 1 && bn.w > order[0].w * .08);
+  const [hC, sC] = third ? toHsl(...colOf(third)) : [(hA + 325) % 360, sA];
+  const dark = n ? lum / n < .36 : false;
+  const sat = v => Math.min(.78, Math.max(.38, v * 1.3));
+  const t = dark
+    ? { base: toRgb(hA, sat(sA) * .7, .14), a: toRgb(hA, sat(sA), .34), b: toRgb(hB, sat(sB), .28), c: toRgb(hC, sat(sC), .3), glow: toRgb(hA, sat(sA), .42), dark: 1 }
+    : { base: toRgb(hA, sat(sA) * .6, .88), a: toRgb(hA, sat(sA), .74), b: toRgb(hB, sat(sB), .7), c: toRgb(hC, sat(sC), .76), glow: toRgb(hA, sat(sA) * .8, .93), dark: 0 };
+  photoTones.set(img, t);
+  return t;
+}
+const mixC = (p, q, k) => p.map((v, i) => v + (q[i] - v) * k);
+const css = c => `rgb(${c.map(v => Math.round(v)).join(',')})`;
+// tones for the frame: crossfades from the previous photo's tones right after each swap
+function frameTones(st, intro) {
+  const list = photos(), p = list[st.idx];
+  if (!p || !p.img) return null;
+  const cur = tonesOf(p.img);
+  const k = !intro && st.since < BG_FADE && list.length > 1 ? smoothIn(st.since / BG_FADE) : 1;
+  if (k >= 1) return cur;
+  const prev = list[(st.idx - 1 + list.length) % list.length];
+  if (!prev || !prev.img) return cur;
+  const pt = tonesOf(prev.img);
+  const out = { dark: pt.dark + (cur.dark - pt.dark) * k };
+  for (const key of ['base', 'a', 'b', 'c', 'glow']) out[key] = mixC(pt[key], cur[key], k);
+  return out;
+}
+function drawPhotoBg(ctx, W, H, st, intro, time) {
+  const t = frameTones(st, intro);
+  if (!t) { ctx.fillStyle = '#f3f3f3'; ctx.fillRect(0, 0, W, H); return 0; }
+  // blurred backdrop: soft colour blobs drifting round the centre on their own orbits, under a light veil
+  ctx.fillStyle = css(t.base); ctx.fillRect(0, 0, W, H);
+  const Sz = Math.max(W, H), turn = (time || 0) / bgSpin * Math.PI * 2;
+  const rgba = (c, al) => `rgba(${c.map(v => Math.round(v)).join(',')},${al})`;
+  const blob = (c, orbit, size, phase, dir, al) => {
+    const ang = phase + dir * turn;
+    const x = W / 2 + Math.cos(ang) * orbit * Sz, y = H / 2 + Math.sin(ang) * orbit * Sz * .85, r = size * Sz;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, rgba(c, al)); g.addColorStop(.45, rgba(c, al * .55)); g.addColorStop(1, rgba(c, 0));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  };
+  blob(t.a, .30, .62, 0, 1, .95);
+  blob(t.b, .32, .58, Math.PI * .7, 1, .9);
+  blob(t.c, .26, .52, Math.PI * 1.35, -1, .85);
+  blob(t.a, .22, .42, Math.PI * 1.9, -1, .5);
+  // calm patch behind the word so the text and the capsule photo stay the focus
+  const v = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Sz * .45);
+  v.addColorStop(0, rgba(t.glow, .45)); v.addColorStop(1, rgba(t.glow, 0));
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  // a touch of the grain texture keeps it from looking flat (and hides banding in the GIF)
+  if (grainImg.naturalWidth) {
+    const pat = ctx.createPattern(grainImg, 'repeat');
+    if (pat) {
+      const k = Math.min(W, H) / 1440 * .75; pat.setTransform(new DOMMatrix([k, 0, 0, k, 0, 0]));
+      ctx.save(); ctx.globalAlpha = .14; ctx.globalCompositeOperation = t.dark > .5 ? 'screen' : 'multiply';
+      ctx.fillStyle = pat; ctx.fillRect(0, 0, W, H); ctx.restore();
+    }
+  }
+  return t.dark;
+}
+
 // ================= renderer (preview and GIF) =================
 function coverDraw(ctx, img, x, y, w, h, px, py, z) {
   const ir = img.naturalWidth / img.naturalHeight, br = w / h;
@@ -146,8 +286,10 @@ function coverDraw(ctx, img, x, y, w, h, px, py, z) {
 }
 function draw(ctx, W, H, t, ov) {
   const st = ov || stateAt(t);
-  let dark = false;
-  if (S.bg === 'grain' && grainImg.naturalWidth) {
+  let dark = false, darkMix = null;
+  if (S.bg === 'photo') {
+    darkMix = drawPhotoBg(ctx, W, H, st, !ov && t < PRE, t); dark = darkMix > .5;
+  } else if (S.bg === 'grain' && grainImg.naturalWidth) {
     const pat = W > 0 && H > 0 ? ctx.createPattern(grainImg, 'repeat') : null;
     if (pat) { const k = Math.min(W, H) / 1440 * 0.75; pat.setTransform(new DOMMatrix([k, 0, 0, k, 0, 0])); ctx.fillStyle = pat; }
     else ctx.fillStyle = '#f3f3f3';
@@ -162,10 +304,11 @@ function draw(ctx, W, H, t, ov) {
   const sp = split(S.text);
   const gapE = sp.kash ? -0.12 : 0.07;               // kashida tucks under the capsule; Latin keeps a small gap
   let fs = Math.min(W * .15, H * .24);
-  ctx.font = `900 ${fs}px ${S.family}`; ctx.direction = sp.rtl ? 'rtl' : 'ltr';
+  const fam = sp.rtl || S.family !== DEFAULT_FAMILY ? S.family : LATIN_FAMILY;
+  ctx.font = `900 ${fs}px ${fam}`; ctx.direction = sp.rtl ? 'rtl' : 'ltr';
   let wA = ctx.measureText(sp.a).width, wB = ctx.measureText(sp.b).width;
   const full = wA + wB + (OPEN + 2 * gapE) * fs;
-  if (full > W * .9) { const k = (W * .9) / full; fs *= k; wA *= k; wB *= k; ctx.font = `900 ${fs}px ${S.family}`; }
+  if (full > W * .9) { const k = (W * .9) / full; fs *= k; wA *= k; wB *= k; ctx.font = `900 ${fs}px ${fam}`; }
 
   const pw = st.w * fs, ph = st.h * fs, gap = gapE * fs;
   const rowW = wA + wB + pw + 2 * gap, cy = H / 2;
@@ -179,7 +322,7 @@ function draw(ctx, W, H, t, ov) {
     const capH = ctx.measureText('H').actualBoundingBoxAscent || fs * .72;
     base = cy + capH / 2; pcy = cy;
   }
-  ctx.fillStyle = dark ? '#f4f4f4' : '#161616'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = darkMix != null ? css(mixC([22, 22, 22], [244, 244, 244], clamp((darkMix - .5) * 5 + .5))) : (dark ? '#f4f4f4' : '#161616'); ctx.textBaseline = 'alphabetic';
 
   let pillL;
   if (sp.rtl) {
@@ -330,7 +473,17 @@ langBox.querySelectorAll('.lang-item').forEach(b => b.addEventListener('click', 
   e.stopPropagation(); langBox.classList.remove('open'); applyLang(b.dataset.lang);
 }));
 document.addEventListener('click', () => langBox.classList.remove('open'));
-$('text').addEventListener('input', e => S.text = e.target.value || '');
+$('text').addEventListener('input', e => { S.text = e.target.value || ''; S.splitAt = 'auto'; refreshSplitOptions(); });
+// "Capsule position": automatic first, then one choice per gap between letters of the current word
+function refreshSplitOptions() {
+  const sel = $('splitAt'), w = S.text.replace(/\s+/g, ' ').trim().replace(/ـ/g, '');
+  const opts = [['auto', L().splitAuto]];
+  for (let i = 1; i < w.length; i++) if (w[i - 1] !== ' ' && w[i] !== ' ') opts.push([String(i), `${w.slice(0, i)} ● ${w.slice(i)}`]);
+  sel.innerHTML = opts.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+  sel.value = opts.some(o => o[0] === String(S.splitAt)) ? String(S.splitAt) : 'auto';
+  S.splitAt = sel.value;
+}
+$('splitAt').addEventListener('change', e => { S.splitAt = e.target.value; });
 $('kashida').addEventListener('change', e => S.kashida = +e.target.value);
 $('ratio').addEventListener('change', e => { S.ratio = e.target.value; layout(); });
 $('bg').addEventListener('change', e => {
@@ -354,37 +507,48 @@ loopOn.addEventListener('click', () => setLoop(true));
 loopOff.addEventListener('click', () => setLoop(false));
 
 const segD = $('useDefault'), segM = $('useMine');
-function setSource(mine) { useMine = mine; segD.classList.toggle('on', !mine); segM.classList.toggle('on', mine); renderThumbs(); restart(); }
+// "My photos" is always available: picking it shows the upload button under the tabs
+function setSource(mine) {
+  useMine = mine; segD.classList.toggle('on', !mine); segM.classList.toggle('on', mine);
+  $('photoUpload').classList.toggle('show', mine); renderThumbs(); restart();
+}
+let thumbsOpen = false;   // more than 5 photos: show 4 and a "+N" tile until it is tapped
 // thumbnails of the photos in use, each with a delete (×) button
 const X_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
 function renderThumbs() {
   const box = $('thumbs'); box.innerHTML = '';
-  const list = photos(), canDelete = useMine && myImgs.length > 0;   // only uploaded photos can be removed
-  list.forEach(p => {
+  const list = useMine ? myImgs : photos(), canDelete = useMine;     // only uploaded photos can be removed
+  const fold = !thumbsOpen && list.length > 5, shown = fold ? list.slice(0, 4) : list;
+  shown.forEach(p => {
     const el = document.createElement('div'); el.className = 'thumb';
     el.innerHTML = `<img src="${p.img.src}" alt="">` + (canDelete ? `<button class="del" title="${L().remove}" aria-label="${L().remove}">${X_ICON}</button>` : '');
     const del = el.querySelector('.del');
     if (del) del.addEventListener('click', e => { e.stopPropagation(); el.classList.add('out'); setTimeout(() => removePhoto(p), 260); });
     box.appendChild(el);
   });
+  if (fold) {
+    const more = document.createElement('button'); more.className = 'thumb more'; more.dir = 'ltr';   // keeps "+" in front
+    more.textContent = '+' + num(list.length - 4);
+    more.addEventListener('click', () => { thumbsOpen = true; renderThumbs(); });
+    box.appendChild(more);
+  }
+  refreshGifInfo();
 }
 function removePhoto(p) {
   if (!useMine) return;
   const arr = myImgs, i = arr.indexOf(p); if (i === -1) return;
   arr.splice(i, 1);
   if (p.img.src.startsWith('blob:')) URL.revokeObjectURL(p.img.src);   // free the uploaded file
-  if (useMine && !myImgs.length) { segM.disabled = true; setSource(false); return; }   // no own photos left → back to defaults
   renderThumbs(); restart();
 }
 segD.addEventListener('click', () => setSource(false));
-segM.addEventListener('click', () => myImgs.length && setSource(true));
+segM.addEventListener('click', () => setSource(true));
 $('imgfile').addEventListener('change', async e => {
   const files = [...e.target.files].filter(f => f.type.startsWith('image/')); e.target.value = '';
   if (!files.length) return;
   const imgs = await Promise.all(files.map(f => load(URL.createObjectURL(f))));
   const added = imgs.filter(Boolean).map(img => ({ img, pos: [.5, .5] }));
   myImgs = myImgs.concat(added);                       // new uploads are added to the ones already there
-  segM.disabled = !myImgs.length;
   say(L().added(added.length)); setSource(true);
 });
 $('fontfile').addEventListener('change', async e => {
@@ -402,6 +566,26 @@ document.querySelectorAll('.help').forEach(h => h.addEventListener('click', e =>
 }));
 document.addEventListener('click', () => document.querySelectorAll('.help.show').forEach(x => x.classList.remove('show')));
 
+// ================= GIF length and size hints =================
+// The photo-count menu shows how long each choice plays, and a line under it estimates the file size
+// from the current choices. The size model is fitted to real exports (e.g. 1080 px, 50 fps, 9 photos ≈ 26 MB).
+const BG_WEIGHT = { grain: 1, photo: 4.5, custom: 1.3, white: .85, black: .85 };
+function refreshGifInfo() {
+  const sel = $('gifCount'), est = $('estimate'); if (!sel || !est) return;
+  const n = Math.max(1, photos().length), secs = c => num(Math.round((PRE + CL * c) / speed));
+  [...sel.options].forEach(o => {
+    const c = o.value === 'all' ? n : Math.min(+o.value, n);
+    o.textContent = o.value === 'all' ? L().countAll(num(n), secs(n)) : L().countOpt(num(+o.value), secs(c));
+  });
+  const cnt = sel.value === 'all' ? n : Math.min(+sel.value, n);
+  const W = +$('gifSize').value, [a, b] = ratioWH(), H = Math.round(W * b / a / 2) * 2, fps = +$('gifFps').value;
+  const mb = 2.54 * cnt * Math.pow(W * H / 1e6, .85) * Math.pow(fps / 50, .74) * (BG_WEIGHT[S.bg] || 1) / speed;
+  const heavy = mb > 15;
+  est.classList.toggle('heavy', heavy);
+  est.textContent = L().estimate(num(mb, mb < 10 ? 1 : 0)) + (heavy ? ' — ' + L().estimateHeavy : '');
+}
+panel.addEventListener('change', refreshGifInfo);
+
 // ================= speed (panel slider + timeline chip, kept in sync) =================
 const speedIn = $('speed'), speedVal = $('speedVal'), tlSpeed = $('tlSpeed');
 const label = v => (Math.round(v * 100) / 100) + '×';
@@ -412,21 +596,21 @@ function setSpeed(v) {
   const i = SPEEDS.indexOf(v);
   speedIn.value = i; speedIn.style.setProperty('--p', (i / (SPEEDS.length - 1) * 100) + '%');
   speedVal.textContent = label(v); tlSpeed.textContent = label(v);
+  refreshGifInfo();
 }
 speedIn.addEventListener('input', () => setSpeed(SPEEDS[+speedIn.value]));
 tlSpeed.addEventListener('click', e => { e.stopPropagation(); setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]); });
 setSpeed(1);
 
 // ================= reset everything to default (language stays) =================
-const DEFAULT_FAMILY = S.family;
 $('reset').addEventListener('click', () => {
   const d = L();
   S.text = d.word; $('text').value = d.word;
-  S.kashida = 2; S.ratio = '1:1'; S.bg = 'grain'; S.family = DEFAULT_FAMILY;
+  S.kashida = 2; S.splitAt = 'auto'; refreshSplitOptions(); S.ratio = '1:1'; S.bg = 'grain'; S.family = DEFAULT_FAMILY;
   document.querySelectorAll('select[data-default]').forEach(sel => sel.value = sel.dataset.default);
   bgImg = null; bgName = ''; bgDark = false; $('bgUpload').classList.remove('show'); $('bgLabel').textContent = d.uploadBg;
   customFontName = ''; $('fontLabel').textContent = d.uploadFont;
-  myImgs = []; defaultImgs = defaultAll.slice(); segM.disabled = true; setSource(false);
+  myImgs = []; defaultImgs = defaultAll.slice(); thumbsOpen = false; setSource(false);
   gifSlot.classList.remove('has-gif'); gifPreview.removeAttribute('src');
   looping = true; setToggle(); setSpeed(1); layout(); restart(); flash(d.resetDone);
   const r = $('reset'); r.classList.remove('spin'); void r.offsetWidth; r.classList.add('spin');
@@ -446,13 +630,19 @@ gen.addEventListener('click', async () => {
   const W = +$('gifSize').value, H = Math.round(W * b / a / 2) * 2, fps = +$('gifFps').value;
   const cnt = $('gifCount').value === 'all' ? photos().length : Math.min(+$('gifCount').value, photos().length);
   const gSpeed = speed, n = Math.ceil((PRE + CL * Math.max(1, cnt)) / gSpeed * fps);
+  exportLimit = Math.max(1, cnt);
+  const gifLen = n / fps * gSpeed, liveSpin = bgSpin;
+  bgSpin = gifLen / Math.max(1, Math.round(gifLen / liveSpin));   // whole turns only, so the GIF loops without a jump
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const ctx = c.getContext('2d', { willReadFrequently: true });
   const sc = document.createElement('canvas'); sc.width = W; sc.height = H;
   const sctx = sc.getContext('2d', { willReadFrequently: true });
   const palettes = new Map();
   const paletteFor = idx => {
-    if (!palettes.has(idx)) { draw(sctx, W, H, PRE + idx * CL + 1.4); palettes.set(idx, quantize(sctx.getImageData(0, 0, W, H).data, 255, { format: 'rgb565' })); }
+    if (!palettes.has(idx)) {
+      draw(sctx, W, H, PRE + idx * CL + 1.4);
+      palettes.set(idx, quantize(sctx.getImageData(0, 0, W, H).data, 255, { format: 'rgb565' }));
+    }
     return palettes.get(idx);
   };
   busy = true; cancelReq = false; gen.classList.add('busy');
@@ -463,13 +653,27 @@ gen.addEventListener('click', async () => {
       if (cancelReq) { sayError(L().cancelled); return; }
       const t = i / fps * gSpeed;
       draw(ctx, W, H, t);
-      const pal = paletteFor(stateAt(t).idx);
-      const index = applyPalette(ctx.getImageData(0, 0, W, H).data, pal, 'rgb565');
+      const st = stateAt(t), px = ctx.getImageData(0, 0, W, H).data;
+      // photo background: while it crossfades between two photos' colours, the frame gets its own palette
+      const fading = S.bg === 'photo' && photos().length > 1 && t >= PRE && st.since < BG_FADE;
+      const pal = fading ? quantize(px, 255, { format: 'rgb565' }) : paletteFor(st.idx);
+      if (S.bg === 'photo') dither(px, W);                   // breaks gradient banding into a fine, steady pattern
+      const index = applyPalette(px, pal, 'rgb565');
       const csEnd = Math.round((i + 1) * 100 / fps), delay = (csEnd - csDone) * 10; csDone = csEnd;
       const fullPal = pal.concat([[255, 0, 255]]), KEY = pal.length;
       if (prevIdx && prevPal === pal) {
-        const out = new Uint8Array(index.length);
-        for (let p = 0; p < index.length; p++) out[p] = index[p] === prevIdx[p] ? KEY : index[p];
+        // only pixels that changed are written. With the moving photo background, a colour that moved only a
+        // hair is left as it was (the drifting blobs are soft, so this is invisible and keeps the file small)
+        const out = new Uint8Array(index.length), loose = S.bg === 'photo', T2 = 14 * 14;
+        for (let p = 0; p < index.length; p++) {
+          const a = index[p], b = prevIdx[p];
+          if (a === b) { out[p] = KEY; continue; }
+          if (loose) {
+            const ca = pal[a], cb = pal[b], dr = ca[0] - cb[0], dg = ca[1] - cb[1], db = ca[2] - cb[2];
+            if (dr * dr + dg * dg + db * db < T2) { out[p] = KEY; index[p] = b; continue; }   // keep what is on screen
+          }
+          out[p] = a;
+        }
         enc.writeFrame(out, W, H, { palette: fullPal, delay, transparent: true, transparentIndex: KEY, dispose: 1, repeat: 0 });
       } else enc.writeFrame(index, W, H, { palette: fullPal, delay, dispose: 1, repeat: 0 });
       prevIdx = index; prevPal = pal;
@@ -477,7 +681,7 @@ gen.addEventListener('click', async () => {
       if (i % 3 === 0) await yieldUI();
     }
     enc.finish();
-    const blob = new Blob([enc.bytes()], { type: 'image/gif' }), mb = (blob.size / 1048576).toFixed(1);
+    const blob = new Blob([enc.bytes()], { type: 'image/gif' }), mb = num(blob.size / 1048576, 1);
     if (gifPreview.src.startsWith('blob:')) URL.revokeObjectURL(gifPreview.src);
     gifPreview.src = URL.createObjectURL(blob); gifSlot.classList.add('has-gif');
     // save straight away with a download link; the preview below stays as a fallback
@@ -486,16 +690,19 @@ gen.addEventListener('click', async () => {
       document.body.appendChild(a); a.click(); a.remove(); say(L().saved(mb));
     } catch { say(L().manual(mb)); }
   } catch (err) { sayError(L().failed + (err && err.message || err)); }
-  finally { busy = false; cancelReq = false; gen.classList.remove('busy'); bar.style.width = '0'; genLabel.textContent = L().create; }
+  finally { exportLimit = 0; bgSpin = liveSpin; busy = false; cancelReq = false; gen.classList.remove('busy'); bar.style.width = '0'; genLabel.textContent = L().create; }
 });
 
 // ================= boot =================
-let saved = 'fa'; try { saved = localStorage.getItem('kc-lang') || 'fa'; } catch {}
-applyLang(I18N[saved] ? saved : 'fa');
+// first visit opens in English; after that the last language chosen is remembered
+let saved = 'en'; try { saved = localStorage.getItem('kc-lang') || 'en'; } catch {}
+document.querySelectorAll('.lang-item').forEach(b => { b.querySelector('.flag').innerHTML = FLAGS[b.dataset.lang]; });
+applyLang(I18N[saved] ? saved : 'en');
 const ready = (async () => {
   defaultAll = (await Promise.all(DEFAULTS.map(async d => ({ img: await load(d.src), pos: d.pos })))).filter(p => p.img);
   defaultImgs = defaultAll.slice(); renderThumbs();
   await document.fonts.load(`900 40px ${S.family}`, 'ایران IRAN').catch(() => {});
+  await document.fonts.load(`900 40px ${LATIN_FAMILY}`, 'IRAN').catch(() => {});
   await document.fonts.ready; return true;
 })();
 layout(); window.addEventListener('resize', layout); isMobile.addEventListener('change', layout);
