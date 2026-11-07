@@ -71,7 +71,6 @@ function applyLang(next) {
   requestAnimationFrame(layout); setTimeout(layout, 450);
   setToggle(); say(''); if (defaultAll.length) renderThumbs();
   refreshGifInfo();
-  try { localStorage.setItem('kc-lang', next); } catch {}
 }
 
 // ================= data =================
@@ -694,10 +693,10 @@ gen.addEventListener('click', async () => {
 });
 
 // ================= boot =================
-// first visit opens in English; after that the last language chosen is remembered
-let saved = 'en'; try { saved = localStorage.getItem('kc-lang') || 'en'; } catch {}
+// every visit opens in English; the visitor can switch language from the flag button
+try { localStorage.removeItem('kc-lang'); } catch {}   // forget the choice older versions remembered
 document.querySelectorAll('.lang-item').forEach(b => { b.querySelector('.flag').innerHTML = FLAGS[b.dataset.lang]; });
-applyLang(I18N[saved] ? saved : 'en');
+applyLang('en');
 const ready = (async () => {
   defaultAll = (await Promise.all(DEFAULTS.map(async d => ({ img: await load(d.src), pos: d.pos })))).filter(p => p.img);
   defaultImgs = defaultAll.slice(); renderThumbs();
