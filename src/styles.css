@@ -359,3 +359,6 @@
 .star-x svg { width: 14px; height: 14px; }
 .star-x:hover { background: #e8e8ee; color: var(--ink); }
 
+/* GIF size / fps / photo count are greyed out while a preset (LinkedIn) chooses them */
+.gif-manual { transition: opacity .2s; }
+.gif-manual.off { opacity: .4; pointer-events: none; }

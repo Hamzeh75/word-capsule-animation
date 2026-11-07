@@ -575,6 +575,29 @@ document.addEventListener('click', () => document.querySelectorAll('.help.show')
 // The photo-count menu shows how long each choice plays, and a line under it estimates the file size
 // from the current choices. The size model is fitted to real exports (e.g. 1080 px, 50 fps, 9 photos ≈ 26 MB).
 const BG_WEIGHT = { grain: 1, photo: 4.5, custom: 1.3, white: .85, black: .85 };
+// size estimate (MB) for a given export
+const estimateMB = (W, H, fps, cnt) => 2.54 * cnt * Math.pow(W * H / 1e6, .85) * Math.pow(fps / 50, .74) * (BG_WEIGHT[S.bg] || 1) / speed;
+// the settings an export will use: the menus as set, or the LinkedIn preset (under 250 frames and 5 MB)
+function gifSettings() {
+  const [a, b] = ratioWH(), all = Math.max(1, photos().length);
+  if ($('preset').value === 'linkedin') {
+    // the size model reads ~30% low at these low frame rates (checked against real exports), so it is corrected here.
+    // Try 3 photos, then fewer, each at the largest width that stays under ~4.4 MB and 240 frames.
+    const H = w => Math.round(w * b / a / 2) * 2;
+    let pick = null;
+    for (let cnt = Math.min(3, all); cnt >= 1 && !pick; cnt--) {
+      const len = (PRE + CL * cnt) / speed, fps = Math.max(8, Math.min(25, Math.floor(240 / len)));
+      for (const W of [1080, 900, 720, 600, 480]) {
+        const mb = 1.3 * estimateMB(W, H(W), fps, cnt);
+        if (mb <= 4.4) { pick = { W, H: H(W), fps, cnt, linkedin: true, mb }; break; }
+      }
+    }
+    if (!pick) { const len = (PRE + CL) / speed, fps = Math.max(8, Math.min(25, Math.floor(240 / len))); pick = { W: 480, H: H(480), fps, cnt: 1, linkedin: true, mb: 1.3 * estimateMB(480, H(480), fps, 1) }; }
+    return pick;
+  }
+  const W = +$('gifSize').value, cnt = $('gifCount').value === 'all' ? all : Math.min(+$('gifCount').value, all);
+  return { W, H: Math.round(W * b / a / 2) * 2, fps: +$('gifFps').value, cnt, linkedin: false };
+}
 function refreshGifInfo() {
   const sel = $('gifCount'), est = $('estimate'); if (!sel || !est) return;
   const n = Math.max(1, photos().length), secs = c => num(Math.round((PRE + CL * c) / speed));
@@ -582,9 +605,14 @@ function refreshGifInfo() {
     const c = o.value === 'all' ? n : Math.min(+o.value, n);
     o.textContent = o.value === 'all' ? L().countAll(num(n), secs(n)) : L().countOpt(num(+o.value), secs(c));
   });
-  const cnt = sel.value === 'all' ? n : Math.min(+sel.value, n);
-  const W = +$('gifSize').value, [a, b] = ratioWH(), H = Math.round(W * b / a / 2) * 2, fps = +$('gifFps').value;
-  const mb = 2.54 * cnt * Math.pow(W * H / 1e6, .85) * Math.pow(fps / 50, .74) * (BG_WEIGHT[S.bg] || 1) / speed;
+  const g = gifSettings(), mb = g.mb ?? estimateMB(g.W, g.H, g.fps, g.cnt);
+  document.querySelectorAll('.gif-manual').forEach(el => el.classList.toggle('off', g.linkedin));   // preset decides these
+  if (g.linkedin) {
+    const len = (PRE + CL * g.cnt) / speed;
+    est.classList.remove('heavy');
+    est.textContent = L().presetInfo(num(mb, 1), num(Math.ceil(len * g.fps)), num(Math.round(len)));
+    return;
+  }
   const heavy = mb > 15;
   est.classList.toggle('heavy', heavy);
   est.textContent = L().estimate(num(mb, mb < 10 ? 1 : 0)) + (heavy ? ' — ' + L().estimateHeavy : '');
@@ -631,9 +659,7 @@ const yieldUI = () => new Promise(r => setTimeout(r, 0));
 let busy = false, cancelReq = false;
 gen.addEventListener('click', async () => {
   if (busy) { cancelReq = true; genLabel.textContent = L().cancelled; return; }   // second click while exporting = cancel
-  const [a, b] = ratioWH();
-  const W = +$('gifSize').value, H = Math.round(W * b / a / 2) * 2, fps = +$('gifFps').value;
-  const cnt = $('gifCount').value === 'all' ? photos().length : Math.min(+$('gifCount').value, photos().length);
+  const { W, H, fps, cnt } = gifSettings();
   const gSpeed = speed, n = Math.ceil((PRE + CL * Math.max(1, cnt)) / gSpeed * fps);
   exportLimit = Math.max(1, cnt);
   const gifLen = n / fps * gSpeed, liveSpin = bgSpin;

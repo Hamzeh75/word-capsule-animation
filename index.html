@@ -128,7 +128,12 @@
     </button>
   </div>
 
-  <div class="field row">
+  <div class="field">
+    <div class="label"><span data-t="preset"></span> <span class="help" data-tip-t="presetTip">?</span></div>
+    <select class="control" id="preset" data-opts="presetOpts" data-default="custom"></select>
+  </div>
+
+  <div class="field row gif-manual">
     <div>
       <div class="label"><span data-t="gifSize"></span> <span class="help" data-tip-t="gifSizeTip">?</span></div>
       <select class="control" id="gifSize" data-opts="sizeOpts" data-default="1080"></select>
@@ -139,7 +144,7 @@
     </div>
   </div>
 
-  <div class="field">
+  <div class="field gif-manual">
     <div class="label"><span data-t="gifCount"></span> <span class="help" data-tip-t="gifCountTip">?</span></div>
     <select class="control" id="gifCount" data-opts="countOpts" data-default="all"></select>
   </div>
