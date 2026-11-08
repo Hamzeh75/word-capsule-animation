@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f6f6f8">
 <title>Word &amp; Capsule Animation</title>
-<meta name="description" content="Type a word, add photos, and export a smooth capsule-reveal GIF — Persian, English and Arabic.">
+<meta name="description" content="Type a word, add photos, and export a smooth capsule-reveal GIF — English, Persian, Arabic, Chinese and Hindi.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <!-- link previews (WhatsApp, Telegram, X, LinkedIn, Slack, iMessage…) -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Word &amp; Capsule Animation">
 <meta property="og:title" content="Word &amp; Capsule Animation">
-<meta property="og:description" content="Type a word, add your photos, and download a looping GIF where a capsule opens inside the word. English, Persian and Arabic.">
+<meta property="og:description" content="Type a word, add your photos, and download a looping GIF where a capsule opens inside the word. English, Persian, Arabic, Chinese and Hindi.">
 <meta property="og:url" content="https://word-capsule-animation.vercel.app/">
 <meta property="og:image" content="https://word-capsule-animation.vercel.app/og-image.jpg">
 <meta property="og:image:type" content="image/jpeg">
@@ -25,7 +25,7 @@
 <meta name="twitter:image:alt" content="The Persian word ایران with a capsule opening in the middle, showing the stained-glass windows of a mosque">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800;900&family=Vazirmatn:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800;900&family=Noto+Sans+Devanagari:wght@300;400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500;600;700;900&family=Vazirmatn:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
 <aside class="panel" id="panel" dir="ltr">
@@ -44,13 +44,15 @@
         <button class="lang-item" data-lang="en"><span class="flag"></span><span class="ln">English</span><small>English</small></button>
         <button class="lang-item" data-lang="fa"><span class="flag"></span><span class="ln">Persian</span><small>فارسی</small></button>
         <button class="lang-item" data-lang="ar"><span class="flag"></span><span class="ln">Arabic</span><small>العربية</small></button>
+        <button class="lang-item" data-lang="zh"><span class="flag"></span><span class="ln">Chinese</span><small>中文</small></button>
+        <button class="lang-item" data-lang="hi"><span class="flag"></span><span class="ln">Hindi</span><small>हिन्दी</small></button>
       </div>
     </div>
   </div>
 
   <div class="field">
     <div class="label"><span data-t="text"></span><span class="req" aria-hidden="true">*</span></div>
-    <input class="control" id="text" type="text" value="IRAN" maxlength="24" dir="auto">
+    <input class="control" id="text" type="text" value="USA" maxlength="24" dir="auto">
     <div class="hint" data-t="textHint"></div>
   </div>
 

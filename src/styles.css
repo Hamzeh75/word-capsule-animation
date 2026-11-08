@@ -9,7 +9,7 @@
   :root {
     /* Latin letters use Proxima Nova when it is available, otherwise the free look-alike Figtree;
        Persian/Arabic letters fall through to Ravi or Vazirmatn */
-    --ui: "Proxima Nova", "Figtree", "Ravi", "Ravi FaNum", "Ravi Variable", "RaviVF", "Vazirmatn", system-ui, sans-serif;
+    --ui: "Proxima Nova", "Figtree", "Noto Sans SC", "Noto Sans Devanagari", "Ravi", "Ravi FaNum", "Ravi Variable", "RaviVF", "Vazirmatn", system-ui, sans-serif;
     --ink: #121212; --muted: #8e8e99; --line: #e3e3ea; --field: #fafafb;
     --accent: #141414; --accent-2: #2b2b2b; --accent-3: #050505;
     --danger: #d92d2d;

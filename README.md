@@ -15,7 +15,7 @@ Type a word, add photos, and download a looping GIF where a capsule opens inside
 
 ## Features
 
-- English, Persian and Arabic, with right-to-left layout
+- English, Persian, Arabic, Chinese and Hindi, with right-to-left layout for Persian and Arabic
 - Use the default photos or upload your own
 - Choose where the capsule opens, the font weight, the aspect ratio and the background
 - Export GIFs up to 4K at 50 fps

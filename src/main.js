@@ -13,9 +13,12 @@ const L = () => I18N[lang];
 const FLAGS = {
   fa: '<svg viewBox="0 0 21 15"><rect width="21" height="5" fill="#239f40"/><rect y="5" width="21" height="5" fill="#fff"/><rect y="10" width="21" height="5" fill="#da0000"/><path d="M10.5 6.1c-.9.3-1.3 1-1.3 1.5 0 .6.5 1.2 1.3 1.4.8-.2 1.3-.8 1.3-1.4 0-.5-.4-1.2-1.3-1.5Z" fill="none" stroke="#da0000" stroke-width=".55"/><path d="M10.5 6.4v2.4" stroke="#da0000" stroke-width=".55"/></svg>',
   en: '<svg viewBox="0 0 21 15"><rect width="21" height="15" fill="#fff"/><g fill="#b22234"><rect width="21" height="1.154"/><rect y="2.308" width="21" height="1.154"/><rect y="4.615" width="21" height="1.154"/><rect y="6.923" width="21" height="1.154"/><rect y="9.231" width="21" height="1.154"/><rect y="11.538" width="21" height="1.154"/><rect y="13.846" width="21" height="1.154"/></g><rect width="9" height="8.077" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.5" cy="1.4" r=".38"/><circle cx="3.5" cy="1.4" r=".38"/><circle cx="5.5" cy="1.4" r=".38"/><circle cx="7.5" cy="1.4" r=".38"/><circle cx="2.5" cy="2.9" r=".38"/><circle cx="4.5" cy="2.9" r=".38"/><circle cx="6.5" cy="2.9" r=".38"/><circle cx="1.5" cy="4.4" r=".38"/><circle cx="3.5" cy="4.4" r=".38"/><circle cx="5.5" cy="4.4" r=".38"/><circle cx="7.5" cy="4.4" r=".38"/><circle cx="2.5" cy="5.9" r=".38"/><circle cx="4.5" cy="5.9" r=".38"/><circle cx="6.5" cy="5.9" r=".38"/></g></svg>',
-  ar: '<svg viewBox="0 0 21 15"><rect width="21" height="15" fill="#006c35"/><path d="M5.2 5.6c.8-.6 1.6.4 2.4-.2s1.6.4 2.4-.2 1.6.4 2.4-.2 1.6.4 2.4-.2" fill="none" stroke="#fff" stroke-width=".7" stroke-linecap="round"/><path d="M5.6 9.6h9.2" stroke="#fff" stroke-width=".7" stroke-linecap="round"/><path d="M14.8 9.6l1-.6" stroke="#fff" stroke-width=".7" stroke-linecap="round"/></svg>',
+  zh: '<svg viewBox="0 0 21 15"><rect width="21" height="15" fill="#de2910"/><g fill="#ffde00"><path d="m3.5 1.6.66 2.03h2.13l-1.72 1.25.66 2.03L3.5 5.66 1.77 6.91l.66-2.03L.71 3.63h2.13z"/><circle cx="7" cy="1.5" r=".55"/><circle cx="8.3" cy="2.9" r=".55"/><circle cx="8.3" cy="4.8" r=".55"/><circle cx="7" cy="6.1" r=".55"/></g></svg>',
+  hi: '<svg viewBox="0 0 21 15"><rect width="21" height="5" fill="#ff9933"/><rect y="5" width="21" height="5" fill="#fff"/><rect y="10" width="21" height="5" fill="#138808"/><circle cx="10.5" cy="7.5" r="1.9" fill="none" stroke="#000080" stroke-width=".45"/><circle cx="10.5" cy="7.5" r=".45" fill="#000080"/><path d="M10.5 5.6v3.8M8.6 7.5h3.8M9.16 6.16l2.68 2.68M11.84 6.16 9.16 8.84" stroke="#000080" stroke-width=".25"/></svg>',
+  ar: '<svg viewBox="0 0 21 15"><rect width="21" height="5" fill="#00732f"/><rect y="5" width="21" height="5" fill="#fff"/><rect y="10" width="21" height="5" fill="#000"/><rect width="5.25" height="15" fill="#ff0000"/></svg>',   // United Arab Emirates
 };
-const num = (x, d = 0) => Number(x).toLocaleString(lang === 'fa' ? 'fa-IR' : lang === 'ar' ? 'ar-EG' : 'en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const LOCALE = { en: 'en-US', fa: 'fa-IR', ar: 'ar-EG', zh: 'zh-CN', hi: 'hi-IN' };
+const num = (x, d = 0) => Number(x).toLocaleString(LOCALE[lang] || 'en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
 const $ = id => document.getElementById(id);
 const panel = $('panel'), status = $('status');
 let sayTimer = 0;
@@ -55,9 +58,10 @@ function applyLang(next) {
   });
   $('text').placeholder = d.placeholder;
   if (!S.text.trim() || S.text === prevWord) { S.text = d.word; $('text').value = d.word; S.splitAt = 'auto'; }
+  if (next === 'en' && S.text !== S.text.toUpperCase()) { S.text = S.text.toUpperCase(); $('text').value = S.text; }   // English: capitals only
   refreshSplitOptions();
   // language names are written in the language the page is in; the native name sits beside it when it differs
-  const NATIVE = { en: 'English', fa: 'فارسی', ar: 'العربية' };
+  const NATIVE = { en: 'English', fa: 'فارسی', ar: 'العربية', zh: '中文', hi: 'हिन्दी' };
   document.querySelectorAll('.lang-item').forEach(b => {
     const code = b.dataset.lang, name = d.langNames[code];
     b.classList.toggle('on', code === next);
@@ -67,33 +71,73 @@ function applyLang(next) {
   const cur = document.querySelector(`.lang-item[data-lang="${next}"]`);
   $('langFlag').innerHTML = FLAGS[next];
   document.body.classList.toggle('ltr', d.dir === 'ltr');
-  $('kashidaField').style.display = next === 'en' ? 'none' : '';
+  $('kashidaField').style.display = d.dir === 'rtl' ? '' : 'none';   // kashida exists only in Persian/Arabic script
+  if (next === 'zh' || next === 'hi') document.fonts.load(`${S.weight} 40px ${LATIN_FAMILY}`, d.word).catch(() => {});
   requestAnimationFrame(layout); setTimeout(layout, 450);
   setToggle(); say(''); if (defaultAll.length) renderThumbs();
   refreshGifInfo();
+  if (typeof loadedSets !== 'undefined') useDefaultsFor(next);   // each language has its own default photos
   if (typeof starTotal !== 'undefined' && starTotal) showStars();   // star count in the current digits
 }
 
 // ================= data =================
-const DEFAULTS = [
-  { src: IMG + '1.jpg', pos: [.6, .45] },
-  { src: IMG + '2.jpg', pos: [.5, .5] },
-  { src: IMG + '3.jpg', pos: [.5, .45] },
-  { src: IMG + '4.jpg', pos: [.5, .62] },
-  { src: IMG + '5.jpg', pos: [.5, .4] },
-  { src: IMG + '6.jpg', pos: [.5, .5] },
-  { src: IMG + '7.jpg', pos: [.5, .45] },
-  { src: IMG + '8.jpg', pos: [.5, .4] },
-  { src: IMG + '9.jpg', pos: [.5, .5] },
-];
+// default photos per language: English (USA), Persian (Iran), Arabic (UAE), Chinese (China) and Hindi (India).
+// pos = [x, y] from 0 to 1, the point of the photo kept in the middle of the capsule
+const DEFAULT_SETS = {
+  // focus = [x, y] of the main subject (0 to 1): that point is kept in the horizontal centre of the capsule, zooming in if needed
+  en: [
+    { src: IMG + 'en/1.jpg', pos: [.5, .5], focus: [.275, .5] },   // Statue of Liberty and the Manhattan skyline
+    { src: IMG + 'en/2.jpg', pos: [.5, .4] },                      // Midtown Manhattan from above
+    { src: IMG + 'en/3.jpg', pos: [.5, .45] },                     // Lower Manhattan
+    { src: IMG + 'en/4.jpg', pos: [.5, .5] },                      // Las Vegas Strip at night
+  ],
+  hi: [
+    { src: IMG + 'hi/1.jpg', pos: [.5, .5], focus: [.5, .3] },     // Taj Mahal: the dome in the middle
+    { src: IMG + 'hi/2.jpg', pos: [.5, .5], focus: [.75, .45] },   // Key Monastery
+    { src: IMG + 'hi/3.jpg', pos: [.5, .5], focus: [.73, .5] },    // Amber Fort: the painted gate
+    { src: IMG + 'hi/4.jpg', pos: [.5, .5], focus: [.5, .5] },     // Rashtrapati Bhavan at sunset
+  ],
+  zh: [
+    { src: IMG + 'zh/1.jpg', pos: [.5, .5], focus: [.405, .5] },   // Great Wall: the watchtower in the middle
+    { src: IMG + 'zh/2.jpg', pos: [.5, .3] },                      // Forbidden City corner tower (photo too small to zoom)
+    { src: IMG + 'zh/3.jpg', pos: [.5, .5], focus: [.64, .6] },     // Black Dragon Pool pagoda and Jade Dragon Snow Mountain
+    { src: IMG + 'zh/4.jpg', pos: [.5, .5], focus: [.3, .5] },      // Shanghai: Oriental Pearl Tower in the middle
+  ],
+  ar: [
+    { src: IMG + 'ar/1.jpg', pos: [.5, .5] },                    // Dubai Marina
+    { src: IMG + 'ar/2.jpg', pos: [.5, .5] },                    // Museum of the Future
+    { src: IMG + 'ar/3.jpg', pos: [.5, .46] },                   // Burj Al Arab (portrait photo: keep the hotel in view)
+    { src: IMG + 'ar/4.jpg', pos: [.5, .5], focus: [.537, .5] }, // Burj Khalifa in the middle of the capsule
+  ],
+  fa: [
+    { src: IMG + '1.jpg', pos: [.6, .45] },
+    { src: IMG + '2.jpg', pos: [.5, .5] },
+    { src: IMG + '3.jpg', pos: [.5, .45] },
+    { src: IMG + '4.jpg', pos: [.5, .62] },
+    { src: IMG + '5.jpg', pos: [.5, .4] },
+    { src: IMG + '6.jpg', pos: [.5, .5] },
+    { src: IMG + '7.jpg', pos: [.5, .45] },
+    { src: IMG + '8.jpg', pos: [.5, .4] },
+    { src: IMG + '9.jpg', pos: [.5, .5] },
+  ],
+};
 const load = src => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
 let defaultAll = [], defaultImgs = [], myImgs = [], useMine = false, customFontName = '', bgName = '';
 let exportLimit = 0;   // while exporting: only the photos that go into the GIF, so its last frame leads back into the first
+const loadedSets = {};
+async function useDefaultsFor(code) {
+  const key = DEFAULT_SETS[code] ? code : 'fa';
+  if (!loadedSets[key]) loadedSets[key] = Promise.all(DEFAULT_SETS[key].map(async d => ({ img: await load(d.src), pos: d.pos, focus: d.focus })));
+  const set = (await loadedSets[key]).filter(p => p.img);
+  if (code !== lang) return;   // language changed again meanwhile
+  defaultAll = set; defaultImgs = set.slice(); thumbsOpen = false;
+  renderThumbs(); if (!useMine || !myImgs.length) restart();
+}
 const photos = () => { const l = useMine && myImgs.length ? myImgs : defaultImgs; return exportLimit ? l.slice(0, exportLimit) : l; };
 const grainImg = new Image(); grainImg.src = IMG + 'grain.jpg';
 let bgImg = null, bgDark = false;
 
-const LATIN_FAMILY = '"Proxima Nova", "ProximaNova-Black", "Figtree", sans-serif';
+const LATIN_FAMILY = '"Proxima Nova", "ProximaNova-Black", "Figtree", "Noto Sans SC", "Noto Sans Devanagari", sans-serif';
 const S = { text: 'ایران', splitAt: 'auto', weight: 900, kashida: 2, ratio: '1:1', bg: 'grain', family: '"Ravi", "Vazirmatn"' };
 const DEFAULT_FAMILY = S.family;
 
@@ -102,10 +146,16 @@ const NO_JOIN_AFTER = new Set('اآأإٱدذرزژوؤةءى'.split(''));
 const isLetter = ch => /[ؠ-يٱ-ۓۺ-ۿ]/.test(ch || '');
 const isRTL = w => /[֐-ࣿ]/.test(w);
 // returns [first, second] in reading order, plus whether a kashida joins them
+const segmenter = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+const graphemes = w => segmenter ? [...segmenter.segment(w)].map(x => x.segment) : Array.from(w);
 function split(raw) {
   const w = raw.replace(/\s+/g, ' ').trim();
   if (!w) return { a: '', b: '', rtl: true, kash: false };
-  if (!isRTL(w)) { const m = Math.ceil(w.length / 2); return { a: w.slice(0, m), b: w.slice(m), rtl: false, kash: false }; }
+  if (!isRTL(w)) {
+    // split between whole characters, so Hindi vowel signs and Chinese characters are never cut in half
+    const g = graphemes(w), at = S.splitAt !== 'auto' ? Math.max(1, Math.min(+S.splitAt, g.length - 1)) : Math.ceil(g.length / 2);
+    return { a: g.slice(0, at).join(''), b: g.slice(at).join(''), rtl: false, kash: false };
+  }
   const T = 'ـ'.repeat(S.kashida);
   if (S.splitAt !== 'auto') {                        // the user picked the letter the capsule follows
     const plain = w.replace(/ـ/g, ''), at = Math.min(+S.splitAt, plain.length - 1);
@@ -284,6 +334,18 @@ function coverDraw(ctx, img, x, y, w, h, px, py, z) {
   dx = cx + (dx - cx) * z; dy = cy + (dy - cy) * z; dw *= z; dh *= z;
   ctx.drawImage(img, dx, dy, dw, dh);
 }
+// like coverDraw, but puts a chosen point of the photo (a face) in the horizontal centre of the box.
+// It zooms in just enough that the photo still covers the box on both sides of that point,
+// and centres the point vertically as far as the photo allows.
+function focusDraw(ctx, img, x, y, w, h, fx, fy, z) {
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  const room = Math.max(.05, 2 * Math.min(fx, 1 - fx));          // share of the width that can sit around the point
+  const s = Math.max(w / iw, h / ih, w / (room * iw));
+  const dw = iw * s, dh = ih * s, cx = x + w / 2, cy = y + h / 2;
+  let dx = cx - fx * dw, dy = Math.min(y, Math.max(y + h - dh, cy - fy * dh));
+  dx = cx + (dx - cx) * z; dy = cy + (dy - cy) * z;
+  ctx.drawImage(img, dx, dy, dw * z, dh * z);
+}
 function draw(ctx, W, H, t, ov) {
   const st = ov || stateAt(t);
   let dark = false, darkMix = null;
@@ -319,8 +381,14 @@ function draw(ctx, W, H, t, ov) {
     base = cy - fs / 2 + (fs - (asc + desc)) / 2 + asc - .04 * fs; pcy = cy + .02 * fs;
   } else {
     // Latin: centre on the capital height so the capsule sits exactly in the middle of the letters
-    const capH = ctx.measureText('H').actualBoundingBoxAscent || fs * .72;
-    base = cy + capH / 2; pcy = cy;
+    if (/[\u0900-\u097F\u2E80-\u9FFF\uF900-\uFAFF]/.test(sp.a + sp.b)) {
+      // Chinese / Hindi: centre on the actual height of these letters (they have no capital height)
+      const m = ctx.measureText(sp.a + sp.b);
+      base = cy + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2; pcy = cy;
+    } else {
+      const capH = ctx.measureText('H').actualBoundingBoxAscent || fs * .72;
+      base = cy + capH / 2; pcy = cy;
+    }
   }
   ctx.fillStyle = darkMix != null ? css(mixC([22, 22, 22], [244, 244, 244], clamp((darkMix - .5) * 5 + .5))) : (dark ? '#f4f4f4' : '#161616'); ctx.textBaseline = 'alphabetic';
 
@@ -348,7 +416,8 @@ function draw(ctx, W, H, t, ov) {
       // it eases in from a slight zoom and rests at 1:1 (no extra crop)
       const z = 1 + .2 * Math.exp(-st.since * 3.4);
       const fw = Math.max(OPEN * fs, pw);
-      coverDraw(ctx, p.img, pcx - fw / 2, pcy - PH * fs / 2, fw, PH * fs, p.pos[0], p.pos[1], z);
+      if (p.focus) focusDraw(ctx, p.img, pcx - fw / 2, pcy - PH * fs / 2, fw, PH * fs, p.focus[0], p.focus[1], z);
+      else coverDraw(ctx, p.img, pcx - fw / 2, pcy - PH * fs / 2, fw, PH * fs, p.pos[0], p.pos[1], z);
     }
     ctx.restore();
     ctx.save(); ctx.beginPath(); ctx.roundRect(pillL + .5, pcy - ph / 2 + .5, pw - 1, ph - 1, r);
@@ -473,12 +542,19 @@ langBox.querySelectorAll('.lang-item').forEach(b => b.addEventListener('click', 
   e.stopPropagation(); langBox.classList.remove('open'); applyLang(b.dataset.lang);
 }));
 document.addEventListener('click', () => langBox.classList.remove('open'));
-$('text').addEventListener('input', e => { S.text = e.target.value || ''; S.splitAt = 'auto'; refreshSplitOptions(); });
+$('text').addEventListener('input', e => {
+  const el = e.target;
+  if (lang === 'en' && el.value !== el.value.toUpperCase()) {          // English takes capital letters only
+    const a = el.selectionStart, b = el.selectionEnd; el.value = el.value.toUpperCase(); el.setSelectionRange(a, b);
+  }
+  S.text = el.value || ''; S.splitAt = 'auto'; refreshSplitOptions();
+});
 // "Capsule position": automatic first, then one choice per gap between letters of the current word
 function refreshSplitOptions() {
   const sel = $('splitAt'), w = S.text.replace(/\s+/g, ' ').trim().replace(/ـ/g, '');
   const opts = [['auto', L().splitAuto]];
-  for (let i = 1; i < w.length; i++) if (w[i - 1] !== ' ' && w[i] !== ' ') opts.push([String(i), `${w.slice(0, i)} ● ${w.slice(i)}`]);
+  const parts = isRTL(w) ? w.split('') : graphemes(w);                // left-to-right words split by whole characters
+  for (let i = 1; i < parts.length; i++) if (parts[i - 1] !== ' ' && parts[i] !== ' ') opts.push([String(i), `${parts.slice(0, i).join('')} ● ${parts.slice(i).join('')}`]);
   sel.innerHTML = opts.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
   sel.value = opts.some(o => o[0] === String(S.splitAt)) ? String(S.splitAt) : 'auto';
   S.splitAt = sel.value;
@@ -766,10 +842,9 @@ try { localStorage.removeItem('kc-lang'); } catch {}   // forget the choice olde
 document.querySelectorAll('.lang-item').forEach(b => { b.querySelector('.flag').innerHTML = FLAGS[b.dataset.lang]; });
 applyLang('en');
 const ready = (async () => {
-  defaultAll = (await Promise.all(DEFAULTS.map(async d => ({ img: await load(d.src), pos: d.pos })))).filter(p => p.img);
-  defaultImgs = defaultAll.slice(); renderThumbs();
+  await useDefaultsFor(lang);
   await document.fonts.load(`900 40px ${S.family}`, 'ایران IRAN').catch(() => {});
-  await document.fonts.load(`900 40px ${LATIN_FAMILY}`, 'IRAN').catch(() => {});
+  await document.fonts.load(`900 40px ${LATIN_FAMILY}`, 'USA IRAN').catch(() => {});
   await document.fonts.ready; return true;
 })();
 layout(); window.addEventListener('resize', layout); isMobile.addEventListener('change', layout);
