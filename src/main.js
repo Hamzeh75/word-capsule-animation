@@ -827,7 +827,7 @@ const showStars = () => {
     const cached = sessionStorage.getItem('kc-stars');
     if (cached !== null) starTotal = +cached;
     else {
-      const r = await fetch('https://api.github.com/repos/Hamzeh75/word-capsule-animation', { headers: { Accept: 'application/vnd.github+json' } });
+      const r = await fetch('https://api.github.com/repos/HamzehGhoreyshi/word-capsule-animation', { headers: { Accept: 'application/vnd.github+json' } });
       if (!r.ok) return;
       starTotal = (await r.json()).stargazers_count || 0;
       sessionStorage.setItem('kc-stars', String(starTotal));
