@@ -339,6 +339,8 @@
 .credit .stars { display: inline-flex; align-items: center; gap: 4px; }
 .credit .stars[hidden], .credit .dot[hidden] { display: none; }
 .credit .stars svg { width: 14px; height: 14px; color: #e3a008; }
+.credit .site { flex-basis: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 5px; direction: ltr; }
+.credit .site svg { width: 14px; height: 14px; }
 
 /* GitHub star prompt */
 .star-pop { position: fixed; inset: 0; z-index: 1100; display: grid; place-items: center; padding: 16px; background: rgba(15,15,20,.42); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); opacity: 0; transition: opacity .25s ease; }

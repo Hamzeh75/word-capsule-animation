@@ -32,4 +32,4 @@ Built with [Vite](https://vite.dev) and [gifenc](https://github.com/mattdesl/gif
 
 ## Credits
 
-Made with [Claude](https://claude.ai) by [Hamzeh75](https://github.com/Hamzeh75). If you like it, a ⭐ is appreciated.
+Made with [Claude](https://claude.ai) by [Hamzeh75](https://github.com/Hamzeh75). Website: [hamzeh.framer.ai](https://hamzeh.framer.ai). If you like it, a ⭐ is appreciated.
