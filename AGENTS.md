@@ -12,6 +12,7 @@ Project summary lives in: `~/Desktop/AI/ai-os/10_context/projects/word-capsule-a
 - How to run it: `npm install` then `npm run dev` → http://localhost:5173 (Node 20.19+).
 - How to deploy it: push to `main` on GitHub → Vercel builds and publishes automatically to https://word-capsule-animation.vercel.app.
 - Rules specific to this project:
+  - Portfolio link: the published page must show a visible link to `https://hamzeh.framer.ai/?utm_source=word-capsule-animation&utm_medium=referral`. Check it is there before every deploy.
   - Keep it vanilla JS — no React or other frameworks.
   - Every UI string goes in `src/i18n.js` for all five languages (en, fa, ar, zh, hi). Check RTL layout (fa, ar) after UI changes.
   - Fonts live in `word-capsule-fonts/` (separate Vercel site, not in git). Never commit font files to this repo.
